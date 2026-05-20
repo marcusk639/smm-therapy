@@ -16,7 +16,9 @@
     "typescript": "^5.5.0",
     "vitest": "^2.0.0",
     "@vitest/coverage-v8": "^2.0.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "drizzle-orm": "^0.38.0",
+    "@anthropic-ai/sdk": "^0.52.0"
   },
   "packageManager": "pnpm@9.0.0"
 }
