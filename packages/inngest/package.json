@@ -1,0 +1,16 @@
+{
+  "name": "@smm/inngest",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./functions": "./src/functions/index.ts"
+  },
+  "dependencies": {
+    "inngest": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
