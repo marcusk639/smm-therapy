@@ -1,27 +1,49 @@
-import type { ComplianceRule, Violation } from "./schema";
+import { db } from "@smm/db/client";
+import { complianceRules } from "@smm/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import type { ComplianceRule } from "./schema";
+import { runComplianceCritic as runCritic } from "./critic";
+import type { CriticResult } from "./critic";
 
 export type ClientContext = {
   state: string;
   credential: string;
 };
 
-/**
- * Returns the compliance rules applicable to a given client context.
- * Phase 1 will populate this with real rules from the DB.
- */
 export async function getRulesForClient(
-  _ctx: ClientContext,
+  ctx: ClientContext,
 ): Promise<ComplianceRule[]> {
-  return [];
+  const rows = await db
+    .select()
+    .from(complianceRules)
+    .where(
+      and(
+        eq(complianceRules.active, true),
+        sql`(
+          ${complianceRules.states} = '[]'::jsonb
+          OR ${complianceRules.states} @> ${JSON.stringify([ctx.state])}::jsonb
+        )`,
+        sql`(
+          ${complianceRules.credentialTypes} = '[]'::jsonb
+          OR ${complianceRules.credentialTypes} @> ${JSON.stringify([ctx.credential])}::jsonb
+        )`,
+      ),
+    );
+
+  return rows.map((r) => ({
+    id: r.id,
+    ruleText: r.ruleText,
+    ruleType: r.ruleType as ComplianceRule["ruleType"],
+    credentialTypes: r.credentialTypes as ComplianceRule["credentialTypes"],
+    states: r.states as string[],
+    sourceCitation: r.sourceCitation,
+    version: r.version,
+  }));
 }
 
-/**
- * Runs the compliance critic against generated content.
- * Phase 1 will implement this with the Claude Agent SDK tool-use loop.
- */
 export async function runComplianceCritic(
-  _content: string,
-  _rules: ComplianceRule[],
-): Promise<{ violations: Violation[]; approved: boolean }> {
-  return { violations: [], approved: true };
+  content: string,
+  rules: ComplianceRule[],
+): Promise<CriticResult> {
+  return runCritic(content, rules);
 }
