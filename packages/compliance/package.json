@@ -5,9 +5,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./engine": "./src/engine.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./critic": "./src/critic.ts",
+    "./crisis": "./src/crisis.ts",
+    "./disclaimer": "./src/disclaimer.ts"
   },
   "dependencies": {
+    "@smm/ai": "workspace:*",
+    "@smm/db": "workspace:*",
     "zod": "^3.23.0"
   },
   "devDependencies": {

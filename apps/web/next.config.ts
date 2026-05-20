@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "@smm/inngest",
     "@smm/storage",
     "@smm/compliance",
+    "@smm/ai",
   ],
   turbopack: {
     root: path.resolve(__dirname, "../.."),
