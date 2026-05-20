@@ -44,4 +44,5 @@ export const crisisResources = pgTable("crisis_resources", {
 });
 
 export type ComplianceRule = typeof complianceRules.$inferSelect;
+export type NewComplianceRule = typeof complianceRules.$inferInsert;
 export type CrisisResource = typeof crisisResources.$inferSelect;
