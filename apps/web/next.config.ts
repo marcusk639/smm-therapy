@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import path from "path";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -9,6 +10,9 @@ const nextConfig: NextConfig = {
     "@smm/storage",
     "@smm/compliance",
   ],
+  turbopack: {
+    root: path.resolve(__dirname, "../.."),
+  },
 };
 
 export default withSentryConfig(nextConfig, {
@@ -17,5 +21,4 @@ export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
   widenClientFileUpload: true,
   hideSourceMaps: true,
-  disableLogger: true,
 });
