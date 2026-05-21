@@ -27,21 +27,24 @@ export const chunks = pgTable("chunks", {
   knowledgeBaseId: uuid("knowledge_base_id")
     .notNull()
     .references(() => knowledgeBases.id, { onDelete: "cascade" }),
+  // NULL for shared-niche chunks; set for client-specific chunks
   clientId: uuid("client_id").references(() => clients.id, {
     onDelete: "cascade",
   }),
+  // NULL for shared-niche chunks; set for client-specific chunks
   workspaceId: uuid("workspace_id").references(() => workspaces.id, {
     onDelete: "cascade",
   }),
   content: text("content").notNull(),
   embedding: vector("embedding", { dimensions: 1024 }).notNull(),
+  // Computed at insert time: sql`to_tsvector('english', ${content})`
   tsv: tsvector("tsv").notNull(),
   chunkIndex: integer("chunk_index").notNull(),
   tokenCount: integer("token_count").notNull(),
   metadata: jsonb("metadata")
     .$type<Record<string, unknown>>()
     .notNull()
-    .default({}),
+    .default("{}"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

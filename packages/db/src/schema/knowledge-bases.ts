@@ -6,6 +6,7 @@ export const kbTypeEnum = pgEnum("kb_type", ["client", "shared_niche"]);
 
 export const knowledgeBases = pgTable("knowledge_bases", {
   id: uuid("id").defaultRandom().primaryKey(),
+  // NULL when kbType = "shared_niche" (readable by all workspaces)
   workspaceId: uuid("workspace_id").references(() => workspaces.id, {
     onDelete: "cascade",
   }),
