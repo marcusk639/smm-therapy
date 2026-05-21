@@ -1,4 +1,6 @@
 import { inngest } from "../client";
+import { ingestDocument } from "./ingest";
+import { calendarGenerate } from "./calendar-generate";
 
 export const smokeTest = inngest.createFunction(
   { id: "smoke-test" },
@@ -8,4 +10,4 @@ export const smokeTest = inngest.createFunction(
   },
 );
 
-export const functions = [smokeTest];
+export const functions = [smokeTest, ingestDocument, calendarGenerate];
