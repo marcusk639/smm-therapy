@@ -15,6 +15,13 @@
       "when": 1779361073863,
       "tag": "0001_lame_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779386609883,
+      "tag": "0002_curved_captain_midlands",
+      "breakpoints": true
     }
   ]
 }
