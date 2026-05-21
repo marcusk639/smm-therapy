@@ -7,3 +7,6 @@ export * from "./brand-voices";
 export * from "./drafts";
 export * from "./disclaimer-templates";
 export * from "./llm-usage-log";
+export * from "./knowledge-bases";
+export * from "./documents";
+export * from "./chunks";
