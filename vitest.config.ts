@@ -101,6 +101,37 @@ export default defineConfig({
         replacement: path.resolve(__dirname, "packages/db/src/index.ts"),
       },
       {
+        find: "@smm/rag/embed",
+        replacement: path.resolve(__dirname, "packages/rag/src/embed.ts"),
+      },
+      {
+        find: "@smm/rag/hybrid",
+        replacement: path.resolve(__dirname, "packages/rag/src/hybrid.ts"),
+      },
+      {
+        find: "@smm/rag/rerank",
+        replacement: path.resolve(__dirname, "packages/rag/src/rerank.ts"),
+      },
+      {
+        find: "@smm/rag/retrieve",
+        replacement: path.resolve(__dirname, "packages/rag/src/retrieve.ts"),
+      },
+      {
+        find: "@smm/rag/citations",
+        replacement: path.resolve(__dirname, "packages/rag/src/citations.ts"),
+      },
+      {
+        find: "@smm/rag/query-rewrite",
+        replacement: path.resolve(
+          __dirname,
+          "packages/rag/src/query-rewrite.ts",
+        ),
+      },
+      {
+        find: "@smm/rag",
+        replacement: path.resolve(__dirname, "packages/rag/src/index.ts"),
+      },
+      {
         find: "@smm/types/generation",
         replacement: path.resolve(
           __dirname,

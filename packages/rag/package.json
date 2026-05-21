@@ -1,0 +1,23 @@
+{
+  "name": "@smm/rag",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./embed": "./src/embed.ts",
+    "./hybrid": "./src/hybrid.ts",
+    "./rerank": "./src/rerank.ts",
+    "./retrieve": "./src/retrieve.ts",
+    "./citations": "./src/citations.ts",
+    "./query-rewrite": "./src/query-rewrite.ts"
+  },
+  "dependencies": {
+    "@smm/ai": "workspace:*",
+    "@smm/db": "workspace:*",
+    "drizzle-orm": "^0.38.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
