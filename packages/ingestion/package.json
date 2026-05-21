@@ -1,0 +1,35 @@
+{
+  "name": "@smm/ingestion",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./pipeline": "./src/pipeline.ts",
+    "./chunkers/recursive": "./src/chunkers/recursive.ts",
+    "./chunkers/single-chunk": "./src/chunkers/single-chunk.ts",
+    "./chunkers/heading-aware": "./src/chunkers/heading-aware.ts",
+    "./chunkers/semantic": "./src/chunkers/semantic.ts",
+    "./sources/file-upload": "./src/sources/file-upload.ts",
+    "./sources/youtube": "./src/sources/youtube.ts",
+    "./sources/podcast-rss": "./src/sources/podcast-rss.ts",
+    "./sources/web-url": "./src/sources/web-url.ts",
+    "./sources/ig-posts": "./src/sources/ig-posts.ts",
+    "./sources/google-drive": "./src/sources/google-drive.ts"
+  },
+  "dependencies": {
+    "@smm/ai": "workspace:*",
+    "@smm/db": "workspace:*",
+    "@smm/rag": "workspace:*",
+    "unstructured-client": "^0.16.0",
+    "groq-sdk": "^0.9.0",
+    "youtube-transcript": "^1.2.1",
+    "rss-parser": "^3.13.0",
+    "@mozilla/readability": "^0.5.0",
+    "linkedom": "^0.18.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

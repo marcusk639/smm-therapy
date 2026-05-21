@@ -1,0 +1,1 @@
+export { runIngestionPipeline } from "./pipeline";

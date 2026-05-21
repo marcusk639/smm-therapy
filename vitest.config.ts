@@ -10,6 +10,45 @@ export default defineConfig({
     alias: [
       // More specific paths must come before shorter prefixes
       {
+        find: "@smm/ingestion/chunkers/recursive",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/src/chunkers/recursive.ts",
+        ),
+      },
+      {
+        find: "@smm/ingestion/chunkers/single-chunk",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/src/chunkers/single-chunk.ts",
+        ),
+      },
+      {
+        find: "@smm/ingestion/chunkers/heading-aware",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/src/chunkers/heading-aware.ts",
+        ),
+      },
+      {
+        find: "@smm/ingestion/chunkers/semantic",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/src/chunkers/semantic.ts",
+        ),
+      },
+      {
+        find: "@smm/ingestion/pipeline",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/src/pipeline.ts",
+        ),
+      },
+      {
+        find: "@smm/ingestion",
+        replacement: path.resolve(__dirname, "packages/ingestion/src/index.ts"),
+      },
+      {
         find: "@smm/ai/prompts/compliance-critic",
         replacement: path.resolve(
           __dirname,
