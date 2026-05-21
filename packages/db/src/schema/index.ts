@@ -10,3 +10,4 @@ export * from "./llm-usage-log";
 export * from "./knowledge-bases";
 export * from "./documents";
 export * from "./chunks";
+export * from "./calendar-jobs";

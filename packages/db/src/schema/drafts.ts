@@ -48,6 +48,7 @@ export const drafts = pgTable("drafts", {
   generationAuditId: uuid("generation_audit_id").references(
     () => generationAudit.id,
   ),
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
