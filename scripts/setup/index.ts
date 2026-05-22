@@ -114,6 +114,11 @@ program
           ci,
           "STRIPE_SECRET_KEY not set — skipping Stripe setup. Add it and re-run with --skip-db --skip-secrets.",
         );
+      } else if (env.STRIPE_PRICE_GROWTH && env.STRIPE_PRICE_AGENCY) {
+        log(
+          ci,
+          `Stripe prices already configured (Growth: ${env.STRIPE_PRICE_GROWTH}, Agency: ${env.STRIPE_PRICE_AGENCY}) — skipping. Use --skip-stripe to suppress this message.`,
+        );
       } else {
         let webhookUrl: string | undefined;
 

@@ -18,7 +18,7 @@ export async function setupClerkWebhook(
     },
     body: JSON.stringify({
       url: opts.endpointUrl,
-      event_types: ["organization.created", "user.created"],
+      event_types: ["organization.created"],
     }),
   });
 
