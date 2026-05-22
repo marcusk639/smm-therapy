@@ -49,6 +49,7 @@ export const drafts = pgTable("drafts", {
     () => generationAudit.id,
   ),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+  igMediaId: text("ig_media_id"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

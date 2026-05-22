@@ -12,3 +12,4 @@ export * from "./documents";
 export * from "./chunks";
 export * from "./calendar-jobs";
 export * from "./portal";
+export * from "./instagram";
