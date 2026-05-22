@@ -3,6 +3,7 @@ import { ingestDocument } from "./ingest";
 import { calendarGenerate } from "./calendar-generate";
 import { igPublish } from "./ig-publish";
 import { igMetricsSync } from "./ig-metrics-sync";
+import { trendSync } from "./trend-sync";
 
 export const smokeTest = inngest.createFunction(
   { id: "smoke-test" },
@@ -18,4 +19,5 @@ export const functions = [
   calendarGenerate,
   igPublish,
   igMetricsSync,
+  trendSync,
 ];
