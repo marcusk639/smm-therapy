@@ -4,6 +4,14 @@ type DraftSummary = {
   complianceApproved: boolean;
 };
 
+export type PostMetricsSummary = {
+  impressions: number | null;
+  reach: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+};
+
 export type ReportData = {
   month: string;
   publishedCount: number;
@@ -11,11 +19,17 @@ export type ReportData = {
   changesRequestedCount: number;
   formatBreakdown: Record<string, number>;
   complianceRate: number;
+  totalImpressions: number;
+  totalReach: number;
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
 };
 
 export function buildReportData(
   drafts: DraftSummary[],
   month: string,
+  metrics?: PostMetricsSummary[],
 ): ReportData {
   const publishedCount = drafts.filter((d) => d.status === "published").length;
   const approvedCount = drafts.filter((d) => d.status === "approved").length;
@@ -35,6 +49,9 @@ export function buildReportData(
       ? Math.round((compliantCount / drafts.length) * 100)
       : 100;
 
+  const sum = (field: keyof PostMetricsSummary) =>
+    (metrics ?? []).reduce((acc, m) => acc + (m[field] ?? 0), 0);
+
   return {
     month,
     publishedCount,
@@ -42,5 +59,10 @@ export function buildReportData(
     changesRequestedCount,
     formatBreakdown,
     complianceRate,
+    totalImpressions: sum("impressions"),
+    totalReach: sum("reach"),
+    totalLikes: sum("likes"),
+    totalComments: sum("comments"),
+    totalShares: sum("shares"),
   };
 }

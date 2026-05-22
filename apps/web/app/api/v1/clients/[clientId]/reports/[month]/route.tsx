@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@smm/db/client";
-import { clients, drafts } from "@smm/db/schema";
+import { clients, drafts, postMetrics } from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { gte, lte } from "drizzle-orm";
 import {
@@ -75,7 +75,25 @@ export async function GET(
       ),
     );
 
-  const data = buildReportData(draftRows, month);
+  const metricRows = await db
+    .select({
+      impressions: postMetrics.impressions,
+      reach: postMetrics.reach,
+      likes: postMetrics.likes,
+      comments: postMetrics.comments,
+      shares: postMetrics.shares,
+    })
+    .from(postMetrics)
+    .where(
+      and(
+        workspaceFilter(postMetrics.workspaceId, workspaceId),
+        eq(postMetrics.clientId, clientId),
+        gte(postMetrics.recordedAt, start),
+        lte(postMetrics.recordedAt, end),
+      ),
+    );
+
+  const data = buildReportData(draftRows, month, metricRows);
 
   const pdf = await renderToBuffer(
     <Document>
@@ -104,6 +122,36 @@ export async function GET(
             <Text style={styles.value}>{data.complianceRate}%</Text>
           </View>
         </View>
+
+        {data.totalImpressions + data.totalReach > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Engagement</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>Impressions</Text>
+              <Text style={styles.value}>
+                {data.totalImpressions.toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Reach</Text>
+              <Text style={styles.value}>
+                {data.totalReach.toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Likes</Text>
+              <Text style={styles.value}>{data.totalLikes}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Comments</Text>
+              <Text style={styles.value}>{data.totalComments}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Shares</Text>
+              <Text style={styles.value}>{data.totalShares}</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Format Breakdown</Text>

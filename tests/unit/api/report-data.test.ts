@@ -58,4 +58,27 @@ describe("buildReportData", () => {
     const data = buildReportData([], "2026-06");
     expect(data.complianceRate).toBe(100);
   });
+
+  it("sums engagement metrics when provided", () => {
+    const data = buildReportData(
+      [{ status: "published", format: "cta", complianceApproved: true }],
+      "2026-06",
+      [
+        { impressions: 1000, reach: 800, likes: 50, comments: 10, shares: 5 },
+        { impressions: 500, reach: 400, likes: 20, comments: 3, shares: 2 },
+      ],
+    );
+    expect(data.totalImpressions).toBe(1500);
+    expect(data.totalReach).toBe(1200);
+    expect(data.totalLikes).toBe(70);
+  });
+
+  it("returns zero engagement totals when no metrics provided", () => {
+    const data = buildReportData(
+      [{ status: "published", format: "cta", complianceApproved: true }],
+      "2026-06",
+    );
+    expect(data.totalImpressions).toBe(0);
+    expect(data.totalShares).toBe(0);
+  });
 });
