@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./workspace": "./src/workspace.ts",
-    "./generation": "./src/generation.ts"
+    "./generation": "./src/generation.ts",
+    "./portal": "./src/portal.ts",
+    "./calendar": "./src/calendar.ts"
   },
   "dependencies": {
     "zod": "^3.23.0"

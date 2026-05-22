@@ -11,8 +11,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@smm/ai": "workspace:*",
-    "@smm/compliance": "workspace:*",
     "@clerk/nextjs": "^7.3.7",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-label": "^2.1.8",
@@ -20,6 +18,11 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.53.1",
+    "@smm/ai": "workspace:*",
+    "@smm/compliance": "workspace:*",
+    "@smm/db": "workspace:^",
+    "@smm/inngest": "workspace:^",
+    "@smm/types": "workspace:^",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",

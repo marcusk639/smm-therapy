@@ -8,6 +8,7 @@
     "./functions": "./src/functions/index.ts"
   },
   "dependencies": {
+    "@smm/db": "workspace:^",
     "inngest": "^3.0.0"
   },
   "devDependencies": {
