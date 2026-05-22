@@ -59,7 +59,7 @@ program
 
     if (!ci) clack.intro("SMM Therapy — Post-Implementation Setup");
 
-    const env = readEnv();
+    let env = readEnv();
 
     // ── Secrets ────────────────────────────────────────────────────────────
     if (!opts.skipSecrets) {
@@ -139,14 +139,13 @@ program
             secretKey: stripeKey,
             webhookUrl,
           });
-          const updated = mergeEnv(env, {
+          env = mergeEnv(env, {
             STRIPE_PRICE_GROWTH: result.growthPriceId,
             STRIPE_PRICE_AGENCY: result.agencyPriceId,
             ...(result.webhookSecret
               ? { STRIPE_WEBHOOK_SECRET: result.webhookSecret }
               : {}),
           });
-          Object.assign(env, updated);
           writeEnv(env);
 
           spin?.stop(
@@ -201,10 +200,9 @@ program
               secretKey: clerkKey,
               endpointUrl: `${appUrl}/api/webhooks/clerk`,
             });
-            const updated = mergeEnv(env, {
+            env = mergeEnv(env, {
               CLERK_WEBHOOK_SECRET: result.signingSecret,
             });
-            Object.assign(env, updated);
             writeEnv(env);
             spin?.stop("Clerk webhook registered");
             if (ci) console.log("[setup] Clerk webhook registered");
