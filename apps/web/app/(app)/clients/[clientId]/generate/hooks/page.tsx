@@ -20,6 +20,13 @@ type Violation = {
   sourceCitation: string;
 };
 
+type Citation = {
+  chunkId: string;
+  documentTitle: string;
+  sourceType: string;
+  excerpt: string;
+};
+
 type CrisisResource = {
   topicKey: string;
   resourceText: string;
@@ -39,6 +46,7 @@ type GenerateHooksResult = {
     score: number;
     resources: CrisisResource[];
   };
+  citations: Citation[];
   cacheHit: boolean;
 };
 
@@ -183,6 +191,24 @@ export default function GenerateHooksPage() {
                 </ul>
               </AlertDescription>
             </Alert>
+          )}
+
+          {result.citations.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                Context from knowledge base ({result.citations.length} source
+                {result.citations.length > 1 ? "s" : ""}):
+              </p>
+              {result.citations.map((c) => (
+                <div
+                  key={c.chunkId}
+                  className="rounded-sm border px-2 py-1 text-xs text-muted-foreground"
+                >
+                  <span className="font-medium">{c.documentTitle}</span> —{" "}
+                  {c.excerpt}
+                </div>
+              ))}
+            </div>
           )}
 
           <div className="space-y-2">

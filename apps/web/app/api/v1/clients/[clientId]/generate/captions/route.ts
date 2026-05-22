@@ -8,6 +8,8 @@ import { getDisclaimerFor, appendDisclaimer } from "@smm/compliance/disclaimer";
 import { anthropic, extractUsage } from "@smm/ai/client";
 import { buildCaptionSystemPrompt } from "@smm/ai/prompts/captions";
 import { buildCaptionUserPrompt } from "@smm/ai/prompts/hooks";
+import { retrieve } from "@smm/rag/retrieve";
+import { buildCitations } from "@smm/rag/citations";
 import { GenerateCaptionsSchema } from "@smm/types/generation";
 
 export async function POST(
@@ -53,6 +55,13 @@ export async function POST(
     : "Warm and professional. Plain vocabulary. Moderate disclosure.";
 
   const clientState = client.practiceState ?? null;
+
+  const ragResult = await retrieve(`${topic} ${selectedHook}`, {
+    clientId,
+    workspaceId,
+  }).catch(() => ({ chunks: [], contextText: "" }));
+  const citations = buildCitations(ragResult.chunks);
+
   const systemBlocks = buildCaptionSystemPrompt("");
   const clientCtx = {
     state: client.practiceState ?? "unknown",
@@ -68,6 +77,7 @@ export async function POST(
         format,
         brandVoiceContext,
         clientState,
+        ragResult.contextText || undefined,
       );
 
       const response = await anthropic.messages.create({
@@ -132,5 +142,5 @@ export async function POST(
     }),
   );
 
-  return NextResponse.json({ captions: captionResults });
+  return NextResponse.json({ captions: captionResults, citations });
 }

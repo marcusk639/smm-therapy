@@ -6,6 +6,7 @@ export function splitAtTokenBoundary(
   text: string,
   maxTokens: number,
 ): string[] {
+  if (maxTokens <= 0) throw new Error("maxTokens must be > 0");
   const maxChars = maxTokens * 4;
   const parts: string[] = [];
   let remaining = text;

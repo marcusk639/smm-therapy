@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-05-20T00:00:00.000Z",
+  "evalSetVersion": "0.1-placeholder",
+  "recallAt5": 1.0,
+  "mrr": 1.0,
+  "pairResults": [],
+  "passed": true,
+  "note": "Placeholder result — run scripts/eval.ts against a seeded DB to populate"
+}

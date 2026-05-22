@@ -43,6 +43,6 @@ export function headingAwareChunk(
       content,
       chunkIndex: i,
       tokenCount: countTokens(content),
-      metadata,
+      metadata: { ...metadata },
     }));
 }

@@ -28,11 +28,16 @@ export function buildHookSystemPrompt(
 export function buildHookUserPrompt(
   topic: string,
   brandVoiceContext: string,
+  retrievedContext?: string,
 ): string {
+  const contextSection = retrievedContext
+    ? `\n\nRelevant content from this client's knowledge base (use for voice/framing context, not to copy verbatim):\n${retrievedContext}`
+    : "";
+
   return `Generate 15 Instagram hook lines for a mental health practitioner on the topic: "${topic}"
 
 Brand voice context:
-${brandVoiceContext}
+${brandVoiceContext}${contextSection}
 
 Requirements:
 - Mix hook types: question, statistic, bold statement, relatable scenario, list preview
@@ -53,6 +58,7 @@ export function buildCaptionUserPrompt(
     | "cta",
   brandVoiceContext: string,
   clientState: string | null,
+  retrievedContext?: string,
 ): string {
   const FORMAT_DESCRIPTIONS: Record<typeof format, string> = {
     psychoeducation:
@@ -66,11 +72,15 @@ export function buildCaptionUserPrompt(
     cta: "Direct action. Structure: hook → context → specific call to action → value proposition",
   };
 
+  const contextSection = retrievedContext
+    ? `\n\nRelevant content from this client's knowledge base:\n${retrievedContext}`
+    : "";
+
   return `Write an Instagram caption for topic: "${topic}"
 Opening hook (use this verbatim as the first line): "${selectedHook}"
 Format: ${format} — ${FORMAT_DESCRIPTIONS[format]}
 Brand voice: ${brandVoiceContext}
-Practitioner state: ${clientState ?? "not specified"}
+Practitioner state: ${clientState ?? "not specified"}${contextSection}
 
 Keep caption 150–300 words. Write from the practitioner's professional voice.
 Return JSON only: { "caption": string, "hashtags": string[] }`;

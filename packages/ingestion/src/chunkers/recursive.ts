@@ -1,7 +1,7 @@
 import { countTokens, splitAtTokenBoundary } from "../utils";
 import type { Chunk } from "./types";
 
-const MIN_TOKENS = 10;
+const MIN_TOKENS = 50;
 const MAX_TOKENS = 800;
 
 export function recursiveChunk(
@@ -15,7 +15,7 @@ export function recursiveChunk(
     content,
     chunkIndex: i,
     tokenCount: countTokens(content),
-    metadata,
+    metadata: { ...metadata },
   }));
 }
 
@@ -68,7 +68,8 @@ function mergeSmall(segments: string[], sep: string): string[] {
 
   if (current) {
     if (merged.length > 0 && countTokens(current) < MIN_TOKENS) {
-      merged[merged.length - 1] += `\n\n${current}`;
+      const last = merged[merged.length - 1]!;
+      merged.splice(merged.length - 1, 1, `${last}\n\n${current}`);
     } else {
       merged.push(current);
     }

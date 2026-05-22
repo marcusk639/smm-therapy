@@ -15,12 +15,14 @@
     "./sources/podcast-rss": "./src/sources/podcast-rss.ts",
     "./sources/web-url": "./src/sources/web-url.ts",
     "./sources/ig-posts": "./src/sources/ig-posts.ts",
-    "./sources/google-drive": "./src/sources/google-drive.ts"
+    "./sources/google-drive": "./src/sources/google-drive.ts",
+    "./sources/types": "./src/sources/types.ts"
   },
   "dependencies": {
     "@smm/ai": "workspace:*",
     "@smm/db": "workspace:*",
     "@smm/rag": "workspace:*",
+    "@smm/inngest": "workspace:*",
     "unstructured-client": "^0.16.0",
     "groq-sdk": "^0.9.0",
     "youtube-transcript": "^1.2.1",

@@ -181,6 +181,69 @@ export default defineConfig({
         find: "@smm/types",
         replacement: path.resolve(__dirname, "packages/types/src/index.ts"),
       },
+      {
+        find: "@smm/eval/harness",
+        replacement: path.resolve(__dirname, "packages/eval/src/harness.ts"),
+      },
+      {
+        find: "@smm/eval/metrics",
+        replacement: path.resolve(__dirname, "packages/eval/src/metrics.ts"),
+      },
+      {
+        find: "@smm/eval",
+        replacement: path.resolve(__dirname, "packages/eval/src/index.ts"),
+      },
+      // Force ingestion's third-party deps to resolve from one location so
+      // vi.mock() path matching works across the pnpm workspace boundary.
+      {
+        find: "unstructured-client",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/unstructured-client",
+        ),
+      },
+      {
+        find: "groq-sdk",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/groq-sdk",
+        ),
+      },
+      {
+        find: "youtube-transcript",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/youtube-transcript",
+        ),
+      },
+      {
+        find: "rss-parser",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/rss-parser",
+        ),
+      },
+      {
+        find: "linkedom",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/linkedom",
+        ),
+      },
+      {
+        find: "@mozilla/readability",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/@mozilla/readability",
+        ),
+      },
+      {
+        find: "googleapis",
+        replacement: path.resolve(
+          __dirname,
+          "packages/ingestion/node_modules/googleapis",
+        ),
+      },
     ],
   },
 });

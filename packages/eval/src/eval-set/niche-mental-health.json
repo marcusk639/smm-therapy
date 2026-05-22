@@ -1,0 +1,21 @@
+{
+  "version": "0.1-placeholder",
+  "description": "Placeholder eval set. Replace with wife deliverable of 50-100 real query/chunk pairs before Phase 2 sign-off.",
+  "pairs": [
+    {
+      "query": "psychoeducation post about anxiety symptoms",
+      "expectedContentSubstring": "anxiety",
+      "documentTitle": "Mental Health Basics"
+    },
+    {
+      "query": "coping skills for burnout",
+      "expectedContentSubstring": "burnout",
+      "documentTitle": "Workplace Wellness"
+    },
+    {
+      "query": "setting boundaries with family",
+      "expectedContentSubstring": "boundary",
+      "documentTitle": "Relationship Patterns"
+    }
+  ]
+}

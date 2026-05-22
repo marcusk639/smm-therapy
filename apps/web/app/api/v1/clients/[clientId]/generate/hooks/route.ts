@@ -16,6 +16,8 @@ import {
   buildHookUserPrompt,
 } from "@smm/ai/prompts/hooks";
 import { NICHE_EXAMPLES } from "@smm/ai/templates/niche-examples";
+import { retrieve } from "@smm/rag/retrieve";
+import { buildCitations } from "@smm/rag/citations";
 import { GenerateHooksSchema } from "@smm/types/generation";
 import crypto from "node:crypto";
 
@@ -61,8 +63,17 @@ export async function POST(
     ? JSON.stringify(brandVoice.profile)
     : "Warm and professional tone. Plain vocabulary. Moderate disclosure level.";
 
+  const ragResult = await retrieve(topic, { clientId, workspaceId }).catch(
+    () => ({ chunks: [], contextText: "" }),
+  );
+  const citations = buildCitations(ragResult.chunks);
+
   const systemBlocks = buildHookSystemPrompt(NICHE_EXAMPLES);
-  const userPrompt = buildHookUserPrompt(topic, brandVoiceContext);
+  const userPrompt = buildHookUserPrompt(
+    topic,
+    brandVoiceContext,
+    ragResult.contextText || undefined,
+  );
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -146,6 +157,7 @@ export async function POST(
       score: crisisResult.score,
       resources: crisisResult.resources,
     },
+    citations,
     cacheHit: usage.cacheReadTokens > 0,
   });
 }
