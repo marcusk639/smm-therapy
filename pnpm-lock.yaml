@@ -68,6 +68,9 @@ importers:
       '@smm/crypto':
         specifier: workspace:^
         version: link:../../packages/crypto
+      '@smm/features':
+        specifier: workspace:*
+        version: link:../../packages/features
       '@smm/rag':
         specifier: workspace:*
         version: link:../../packages/rag
@@ -92,6 +95,9 @@ importers:
       resend:
         specifier: ^6.12.3
         version: 6.12.3
+      stripe:
+        specifier: ^22.1.1
+        version: 22.1.1(@types/node@20.19.41)
       svix:
         specifier: ^1.94.0
         version: 1.94.0
@@ -192,6 +198,12 @@ importers:
     devDependencies:
       typescript:
         specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/features:
+    devDependencies:
+      typescript:
+        specifier: ^5
         version: 5.9.3
 
   packages/ingestion:
@@ -9761,6 +9773,18 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
     dev: true
+
+  /stripe@22.1.1(@types/node@20.19.41):
+    resolution: {integrity: sha512-cmodIYP27tBkJ8G7DuGgWw0PFuemlFZbuF3Wwr1TrjFjUa3T7NIgCe6TVwX8BO2ynu+xtTuDGfHafNDCPt9lXA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@types/node': 20.19.41
+    dev: false
 
   /strnum@2.3.0:
     resolution: {integrity: sha512-ums3KNd42PGyx5xaoVTO1mjU1bH3NpY4vsrVlnv9PNGqQj8wd7rJ6nEypLrJ7z5vxK5RP0yMLo6J/Gsm62DI5Q==}

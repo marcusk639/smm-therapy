@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@smm/db/client";
-import { clients, drafts, calendarJobs } from "@smm/db/schema";
+import { clients, drafts, calendarJobs, workspaces } from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { gte, lte } from "drizzle-orm";
 import { inngest } from "@smm/inngest/client";
 import { GenerateCalendarSchema } from "@smm/types/calendar";
+import { canUseFeature } from "@smm/features";
 
 export async function GET(
   req: Request,
@@ -48,6 +49,18 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
   const { workspaceId } = auth;
   const { clientId } = await params;
+
+  const [workspace] = await db
+    .select({ plan: workspaces.plan })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId));
+
+  if (!canUseFeature(workspace?.plan ?? "starter", "calendar_generation")) {
+    return NextResponse.json(
+      { error: "Calendar generation requires the Growth plan or higher." },
+      { status: 403 },
+    );
+  }
 
   const [client] = await db
     .select()
