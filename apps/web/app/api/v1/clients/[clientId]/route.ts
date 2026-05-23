@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@smm/db/client";
 import { clients } from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { UpdateClientSchema } from "@smm/types/client";
 import { requireWorkspace } from "@/lib/workspace";
+
+const UpdateClientWithBrandingSchema = UpdateClientSchema.merge(
+  z.object({
+    logoUrl: z.string().url().nullish(),
+    primaryColor: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/, "primaryColor must be a 6-digit hex color")
+      .nullish(),
+    practiceName: z.string().min(1).max(255).nullish(),
+  }),
+);
 
 export async function GET(
   _req: Request,
@@ -40,7 +52,7 @@ export async function PATCH(
   const { clientId } = await params;
 
   const body = await req.json();
-  const parsed = UpdateClientSchema.safeParse(body);
+  const parsed = UpdateClientWithBrandingSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten() },

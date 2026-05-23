@@ -19,6 +19,7 @@ import { NICHE_EXAMPLES } from "@smm/ai/templates/niche-examples";
 import { retrieve } from "@smm/rag/retrieve";
 import { buildCitations } from "@smm/rag/citations";
 import { GenerateHooksSchema } from "@smm/types/generation";
+import { checkRateLimit } from "@/lib/rate-limit";
 import crypto from "node:crypto";
 
 export async function POST(
@@ -29,6 +30,18 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
   const { workspaceId } = auth;
   const { clientId } = await params;
+
+  const { allowed } = await checkRateLimit(
+    `generate:${workspaceId}`,
+    20,
+    60 * 1000,
+  );
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again later." },
+      { status: 429 },
+    );
+  }
 
   const [client] = await db
     .select()

@@ -13,6 +13,7 @@ import { anthropic, extractUsage } from "@smm/ai/client";
 import {
   buildCalendarSystemPrompt,
   buildCalendarUserPrompt,
+  getAwarenessEventsForPeriod,
 } from "@smm/ai/prompts/calendar";
 import { getRulesForClient, runComplianceCritic } from "@smm/compliance/engine";
 import { getDisclaimerFor, appendDisclaimer } from "@smm/compliance/disclaimer";
@@ -45,6 +46,12 @@ export const calendarGenerate = inngest.createFunction(
     const topicList = distributeTopics(topicAreas, totalPosts);
     const formatList = distributeFormats(totalPosts);
     const scheduledDates = getScheduledDates(month, totalPosts, postsPerWeek);
+
+    const [year, mo] = month.split("-") as [string, string];
+    const periodStart = `${year}-${mo}-01`;
+    const lastDay = new Date(Number(year), Number(mo), 0).getDate();
+    const periodEnd = `${year}-${mo}-${String(lastDay).padStart(2, "0")}`;
+    const awarenessEvents = getAwarenessEventsForPeriod(periodStart, periodEnd);
 
     await step.run("mark-running", () =>
       db
@@ -92,6 +99,7 @@ export const calendarGenerate = inngest.createFunction(
           brandVoiceContext,
           client.practiceState ?? null,
           ragResult.contextText || undefined,
+          awarenessEvents,
         );
 
         const response = await anthropic.messages.create({

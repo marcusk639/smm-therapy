@@ -1,4 +1,38 @@
 import { cachedTextBlock } from "../client";
+import {
+  AWARENESS_CALENDAR,
+  type AwarenessEvent,
+} from "../templates/awareness-calendar";
+
+export { type AwarenessEvent } from "../templates/awareness-calendar";
+
+export function getAwarenessEventsForPeriod(
+  startDate: string,
+  endDate: string,
+): AwarenessEvent[] {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  return AWARENESS_CALENDAR.filter((event) => {
+    if (event.day === undefined) {
+      const eventMonthStart = new Date(start.getFullYear(), event.month - 1, 1);
+      const eventMonthEnd = new Date(start.getFullYear(), event.month, 0);
+      return eventMonthStart <= end && eventMonthEnd >= start;
+    }
+
+    const eventStart = new Date(
+      start.getFullYear(),
+      event.month - 1,
+      event.day,
+    );
+    const eventEnd = new Date(
+      start.getFullYear(),
+      event.month - 1,
+      event.endDay ?? event.day,
+    );
+    return eventStart <= end && eventEnd >= start;
+  });
+}
 
 export function buildCalendarSystemPrompt() {
   return [
@@ -26,10 +60,22 @@ export function buildCalendarUserPrompt(
   brandVoice: string,
   practiceState: string | null,
   ragContext?: string,
+  awarenessEvents?: AwarenessEvent[],
 ): string {
   const formatDesc = FORMAT_INSTRUCTIONS[format] ?? format;
   const contextSection = ragContext
     ? `\n\nRelevant background from this therapist's knowledge base:\n${ragContext}`
     : "";
-  return `Topic: ${topic}\nFormat type: ${formatDesc}\nBrand voice: ${brandVoice}\nPractice state: ${practiceState ?? "not specified"}${contextSection}\n\nGenerate one hook-caption pair as JSON.`;
+  const awarenessSection =
+    awarenessEvents && awarenessEvents.length > 0
+      ? `\n\nMental health awareness events active during this content period:\n${awarenessEvents
+          .map(
+            (e) =>
+              `- ${e.name}: suggested angles: ${e.contentAngles.slice(0, 2).join("; ")}`,
+          )
+          .join(
+            "\n",
+          )}\n\nIf the topic aligns with any of these events, weave in the awareness context naturally.`
+      : "";
+  return `Topic: ${topic}\nFormat type: ${formatDesc}\nBrand voice: ${brandVoice}\nPractice state: ${practiceState ?? "not specified"}${contextSection}${awarenessSection}\n\nGenerate one hook-caption pair as JSON.`;
 }

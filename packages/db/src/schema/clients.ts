@@ -13,6 +13,9 @@ export const clients = pgTable("clients", {
     enum: ["LCSW", "LMFT", "LPC", "PsyD", "PhD", "MD", "Other"],
   }),
   instagramHandle: text("instagram_handle"),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color"),
+  practiceName: text("practice_name"),
   metadata: jsonb("metadata").default("{}"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })

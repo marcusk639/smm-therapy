@@ -8,9 +8,11 @@
     "./functions": "./src/functions/index.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
     "@smm/crypto": "workspace:^",
     "@smm/db": "workspace:^",
     "inngest": "^3.0.0",
+    "resend": "^6.12.3",
     "rss-parser": "^3.13.0",
     "zod": "^3.23.0"
   },

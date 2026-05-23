@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@smm/db/client";
-import { drafts } from "@smm/db/schema";
+import { drafts, draftStatusHistory } from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { z } from "zod";
 
@@ -54,7 +54,7 @@ export async function PATCH(
 ) {
   const auth = await requireWorkspace();
   if (auth instanceof NextResponse) return auth;
-  const { workspaceId } = auth;
+  const { workspaceId, userId } = auth;
   const { draftId } = await params;
 
   const body = (await req.json()) as unknown;
@@ -72,6 +72,21 @@ export async function PATCH(
     update.scheduledAt = new Date(scheduledAt);
   }
 
+  const [existing] = await db
+    .select({ status: drafts.status })
+    .from(drafts)
+    .where(
+      and(
+        workspaceFilter(drafts.workspaceId, workspaceId),
+        eq(drafts.id, draftId),
+        isNull(drafts.deletedAt),
+      ),
+    );
+
+  if (!existing) {
+    return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+  }
+
   const [updated] = await db
     .update(drafts)
     .set(update)
@@ -87,5 +102,16 @@ export async function PATCH(
   if (!updated) {
     return NextResponse.json({ error: "Draft not found" }, { status: 404 });
   }
+
+  if (parsed.data.status !== undefined) {
+    await db.insert(draftStatusHistory).values({
+      draftId,
+      workspaceId,
+      fromStatus: existing.status,
+      toStatus: parsed.data.status,
+      changedBy: userId,
+    });
+  }
+
   return NextResponse.json({ draft: updated });
 }

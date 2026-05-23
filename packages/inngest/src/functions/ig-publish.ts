@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { inngest } from "../client";
 import { db } from "@smm/db/client";
-import { drafts, instagramTokens } from "@smm/db/schema";
+import { drafts, draftStatusHistory, instagramTokens } from "@smm/db/schema";
 import { eq } from "drizzle-orm";
 import { decrypt } from "@smm/crypto";
 import { buildCaption } from "./ig-publish-utils";
@@ -39,7 +39,9 @@ export const igPublish = inngest.createFunction(
   { id: "ig-publish", retries: 3 },
   { event: "instagram/publish" },
   async ({ event, step }) => {
-    const { draftId, clientId, imageUrl } = eventSchema.parse(event.data);
+    const { draftId, clientId, workspaceId, imageUrl } = eventSchema.parse(
+      event.data,
+    );
 
     const [draft] = await step.run("fetch-draft", () =>
       db.select().from(drafts).where(eq(drafts.id, draftId)),
