@@ -165,6 +165,18 @@ export default function BillingPage() {
           );
         })}
       </div>
+
+      <div>
+        <h2 className="text-lg font-semibold">Data</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Download all your workspace data as JSON.
+        </p>
+        <div className="mt-3">
+          <a href="/api/v1/workspace/export" download>
+            <Button variant="outline">Export all data</Button>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

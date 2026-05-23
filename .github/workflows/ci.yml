@@ -1,0 +1,110 @@
+# Required GitHub Secrets:
+#   NEON_API_KEY                     — Neon API key for branch management
+#   NEON_PROJECT_ID                  — Neon project ID
+#   DATABASE_URL                     — Fallback connection string (used if branch creation fails)
+#   ANTHROPIC_API_KEY                — Anthropic API key for AI integration tests
+#   CLERK_SECRET_KEY                 — Clerk backend secret key for auth tests
+#   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY — Clerk publishable key for Next.js build
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  INNGEST_EVENT_KEY: test
+  INNGEST_SIGNING_KEY: test
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Neon branch
+        id: neon-branch
+        run: |
+          RESPONSE=$(curl -s -X POST \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch": {"name": "ci-${{ github.run_id }}"}, "endpoints": [{"type": "read_write"}]}')
+          echo "NEON_BRANCH_ID=$(echo $RESPONSE | python3 -c \"import sys,json; print(json.load(sys.stdin)['branch']['id'])\")" >> $GITHUB_ENV
+          echo "DATABASE_URL=$(echo $RESPONSE | python3 -c \"import sys,json; print(json.load(sys.stdin)['endpoints'][0]['connection_uri'])\")" >> $GITHUB_ENV
+
+      - name: Run migrations
+        run: pnpm --filter @smm/db migrate
+
+      - name: Run unit & integration tests
+        run: pnpm test
+
+      - name: Delete Neon branch
+        if: always()
+        run: |
+          curl -s -X DELETE \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${{ env.NEON_BRANCH_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @smm/web exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run E2E tests
+        run: pnpm --filter @smm/web test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
