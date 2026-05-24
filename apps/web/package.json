@@ -25,6 +25,7 @@
     "@smm/db": "workspace:^",
     "@smm/features": "workspace:*",
     "@smm/inngest": "workspace:^",
+    "@smm/notifications": "workspace:*",
     "@smm/rag": "workspace:*",
     "@smm/types": "workspace:^",
     "class-variance-authority": "^0.7.1",
