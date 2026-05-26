@@ -1,6 +1,9 @@
+import { eq } from "drizzle-orm";
 import { google } from "googleapis";
+import { db } from "@smm/db/client";
+import { documents, knowledgeBases } from "@smm/db/schema";
+import { getDriveAccessToken } from "./google-drive-token";
 import type { FetchResultRaw } from "./types";
-import type { documents } from "@smm/db/schema";
 
 const EXPORTABLE_MIMES: Record<string, string> = {
   "application/vnd.google-apps.document": "text/plain",
@@ -15,16 +18,28 @@ function extractFolderId(url: string): string {
   return match[1];
 }
 
-export async function fetchGoogleDrive(
+async function getWorkspaceIdForDoc(
   doc: typeof documents.$inferSelect,
-  accessToken: string,
-): Promise<FetchResultRaw> {
-  if (!accessToken) {
+): Promise<string> {
+  const [kb] = await db
+    .select({ workspaceId: knowledgeBases.workspaceId })
+    .from(knowledgeBases)
+    .where(eq(knowledgeBases.id, doc.knowledgeBaseId));
+  if (!kb?.workspaceId) {
     throw new Error(
-      "Google Drive access token is required. Re-connect Google Drive in workspace settings.",
+      "Google Drive document's knowledge base has no workspace — cannot load access token.",
     );
   }
+  return kb.workspaceId;
+}
+
+export async function fetchGoogleDrive(
+  doc: typeof documents.$inferSelect,
+): Promise<FetchResultRaw> {
   if (!doc.sourceUrl) throw new Error("Document has no sourceUrl");
+
+  const workspaceId = await getWorkspaceIdForDoc(doc);
+  const accessToken = await getDriveAccessToken(workspaceId);
 
   const auth = new google.auth.OAuth2(
     process.env.GOOGLE_DRIVE_CLIENT_ID,

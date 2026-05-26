@@ -20,6 +20,7 @@ vi.mock("groq-sdk", () => ({
   default: vi.fn().mockImplementation(() => ({
     audio: { transcriptions: { create: mockGroqCreate } },
   })),
+  toFile: vi.fn(async (buffer: Buffer, name: string) => ({ buffer, name })),
 }));
 vi.mock("youtube-transcript", () => ({
   YoutubeTranscript: { fetchTranscript: mockFetchTranscript },
@@ -39,7 +40,10 @@ import { fetchFileUpload } from "../../../packages/ingestion/src/sources/file-up
 import { fetchYoutubeUrl } from "../../../packages/ingestion/src/sources/youtube";
 import { fetchPodcastRss } from "../../../packages/ingestion/src/sources/podcast-rss";
 import { fetchWebUrl } from "../../../packages/ingestion/src/sources/web-url";
-import { parseIgPosts } from "../../../packages/ingestion/src/sources/ig-posts";
+import {
+  parseIgPosts,
+  fetchIgPosts,
+} from "../../../packages/ingestion/src/sources/ig-posts";
 
 const MOCK_DOC = {
   id: "doc-1",
@@ -48,6 +52,7 @@ const MOCK_DOC = {
   title: "Test PDF",
   sourceUrl: null,
   r2Key: "uploads/doc-1.pdf",
+  rawText: null as string | null,
   status: "pending" as const,
   failedStage: null,
   failedReason: null,
@@ -206,5 +211,29 @@ describe("parseIgPosts", () => {
       "Short.\n---\nThis is a proper length post that should be kept.";
     const result = parseIgPosts(raw);
     expect(result.posts).toHaveLength(1);
+  });
+});
+
+describe("fetchIgPosts", () => {
+  it("reads doc.rawText and returns parsed posts", async () => {
+    const result = await fetchIgPosts({
+      ...MOCK_DOC,
+      sourceType: "ig_posts" as const,
+      rawText:
+        "First Instagram caption.\n---\nSecond Instagram caption goes here.",
+      title: "My IG Backlog",
+    });
+    expect(result.posts).toHaveLength(2);
+    expect(result.title).toBe("My IG Backlog");
+  });
+
+  it("throws a helpful error when rawText is missing", async () => {
+    await expect(
+      fetchIgPosts({
+        ...MOCK_DOC,
+        sourceType: "ig_posts" as const,
+        rawText: null,
+      }),
+    ).rejects.toThrow("has no rawText");
   });
 });

@@ -74,7 +74,12 @@ describe("Cross-client chunk isolation", () => {
   beforeAll(async () => {
     await db
       .insert(workspaces)
-      .values({ id: TEST_WS_ID, clerkOrgId: "test-org", name: "Test WS" })
+      .values({
+        id: TEST_WS_ID,
+        clerkOrgId: "test-org",
+        name: "Test WS",
+        slug: "test-ws",
+      })
       .onConflictDoNothing();
     await db
       .insert(clients)

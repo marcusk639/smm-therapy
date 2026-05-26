@@ -1,5 +1,6 @@
 import { UnstructuredClient } from "unstructured-client";
-import Groq from "groq-sdk";
+import { Strategy } from "unstructured-client/sdk/models/shared/partitionparameters.js";
+import Groq, { toFile } from "groq-sdk";
 import { getPresignedDownloadUrl } from "@smm/storage/r2";
 import type { FetchResultRaw, UnstructuredElement } from "./types";
 import type { documents } from "@smm/db/schema";
@@ -37,7 +38,7 @@ async function parseWithUnstructured(
   const response = await client.general.partition({
     partitionParameters: {
       files: { content: buffer, fileName },
-      strategy: "hi_res",
+      strategy: Strategy.HiRes,
     },
   });
 
@@ -52,8 +53,7 @@ async function transcribeWithGroq(
   fileName: string,
 ): Promise<string> {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! });
-  // Groq SDK accepts any FileLike; Blob+name works in Node 18 where File is unavailable
-  const file = Object.assign(new Blob([buffer]), { name: fileName });
+  const file = await toFile(buffer, fileName);
   const result = await groq.audio.transcriptions.create({
     file,
     model: "whisper-large-v3",

@@ -9,14 +9,20 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
+    "@smm/ai": "workspace:^",
+    "@smm/compliance": "workspace:^",
     "@smm/crypto": "workspace:^",
     "@smm/db": "workspace:^",
+    "@smm/ingestion": "workspace:^",
+    "@smm/rag": "workspace:^",
     "inngest": "^3.0.0",
+    "react": "^19.0.0",
     "resend": "^6.12.3",
     "rss-parser": "^3.13.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/react": "^19.0.0",
     "typescript": "^5.5.0"
   }
 }

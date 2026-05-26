@@ -11,7 +11,12 @@
     "./prompts/captions": "./src/prompts/captions.ts",
     "./prompts/brand-voice": "./src/prompts/brand-voice.ts",
     "./prompts/compliance-critic": "./src/prompts/compliance-critic.ts",
-    "./templates/niche-examples": "./src/templates/niche-examples.ts"
+    "./prompts/calendar": "./src/prompts/calendar.ts",
+    "./templates/niche-examples": "./src/templates/niche-examples.ts",
+    "./templates/awareness-calendar": "./src/templates/awareness-calendar.ts",
+    "./agents/trend-synthesizer": "./src/agents/trend-synthesizer.ts",
+    "./agents/repurpose": "./src/agents/repurpose.ts",
+    "./agents/voice-critic": "./src/agents/voice-critic.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

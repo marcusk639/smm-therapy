@@ -1,6 +1,8 @@
 import { VoyageAIClient } from "voyageai";
 import type { ScoredChunk } from "./hybrid";
 
+type RerankItem = { index: number; relevance_score?: number };
+
 function getClient() {
   return new VoyageAIClient({ apiKey: process.env.VOYAGE_API_KEY! });
 }
@@ -25,9 +27,10 @@ export async function voyageRerank(
     model: "voyage-rerank-2",
   });
 
-  if (!response.data || response.data.length === 0) return chunks;
+  const data = (response.data ?? []) as RerankItem[];
+  if (data.length === 0) return chunks;
 
-  return response.data
+  return data
     .sort((a, b) => (b.relevance_score ?? 0) - (a.relevance_score ?? 0))
     .map((item) => ({
       ...chunks[item.index]!,

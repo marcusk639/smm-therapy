@@ -17,3 +17,4 @@ export * from "./instagram";
 export * from "./trends";
 export * from "./stripe";
 export * from "./rate-limit-hits";
+export * from "./workspace-integrations";

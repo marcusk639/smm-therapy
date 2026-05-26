@@ -2,7 +2,10 @@ import Parser from "rss-parser";
 import { inngest } from "../client";
 import { db } from "@smm/db/client";
 import { trendTopics } from "@smm/db/schema";
-import { synthesizeTrends } from "@smm/ai/agents/trend-synthesizer";
+import {
+  synthesizeTrends,
+  type TrendSynthesizerResult,
+} from "@smm/ai/agents/trend-synthesizer";
 import {
   filterByRelevance,
   buildWeekOf,
@@ -84,9 +87,10 @@ export const trendSync = inngest.createFunction(
 
     const postTexts = relevant.slice(0, 50).map((p) => p.text);
 
-    const { trends } = await step.run("synthesize", async () => {
-      return synthesizeTrends(postTexts);
-    });
+    const { trends } = await step.run(
+      "synthesize",
+      async (): Promise<TrendSynthesizerResult> => synthesizeTrends(postTexts),
+    );
 
     const workspaces = await step.run("get-workspaces", async () => {
       const { workspaces: wsTable } = await import("@smm/db/schema");

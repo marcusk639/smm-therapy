@@ -193,6 +193,18 @@ export default defineConfig({
         find: "@smm/eval",
         replacement: path.resolve(__dirname, "packages/eval/src/index.ts"),
       },
+      {
+        find: "@smm/storage/r2",
+        replacement: path.resolve(__dirname, "packages/storage/src/r2.ts"),
+      },
+      {
+        find: "@smm/storage",
+        replacement: path.resolve(__dirname, "packages/storage/src/index.ts"),
+      },
+      {
+        find: "@smm/crypto",
+        replacement: path.resolve(__dirname, "packages/crypto/src/index.ts"),
+      },
       // Force ingestion's third-party deps to resolve from one location so
       // vi.mock() path matching works across the pnpm workspace boundary.
       {
@@ -242,6 +254,15 @@ export default defineConfig({
         replacement: path.resolve(
           __dirname,
           "packages/ingestion/node_modules/googleapis",
+        ),
+      },
+      // voyageai's published ESM entry tries a directory import that Node
+      // can't resolve. Pin tests to the CJS build, which is well-formed.
+      {
+        find: "voyageai",
+        replacement: path.resolve(
+          __dirname,
+          "node_modules/.pnpm/voyageai@0.2.1/node_modules/voyageai/dist/cjs/extended/index.js",
         ),
       },
     ],

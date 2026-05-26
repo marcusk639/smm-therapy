@@ -37,6 +37,7 @@ export const documents = pgTable("documents", {
   title: text("title").notNull(),
   sourceUrl: text("source_url"),
   r2Key: text("r2_key"),
+  rawText: text("raw_text"),
   status: documentStatusEnum("status").notNull().default("pending"),
   failedStage: text("failed_stage"),
   failedReason: text("failed_reason"),

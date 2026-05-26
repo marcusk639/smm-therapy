@@ -10,6 +10,8 @@ import { fetchFileUpload } from "./sources/file-upload";
 import { fetchYoutubeUrl } from "./sources/youtube";
 import { fetchPodcastRss } from "./sources/podcast-rss";
 import { fetchWebUrl } from "./sources/web-url";
+import { fetchIgPosts } from "./sources/ig-posts";
+import { fetchGoogleDrive } from "./sources/google-drive";
 import type { FetchResultRaw } from "./sources/types";
 import type { Chunk } from "./chunkers/types";
 
@@ -183,3 +185,5 @@ registerSourceFetcher("file_upload", fetchFileUpload);
 registerSourceFetcher("youtube_url", fetchYoutubeUrl);
 registerSourceFetcher("podcast_rss", fetchPodcastRss);
 registerSourceFetcher("web_url", fetchWebUrl);
+registerSourceFetcher("ig_posts", fetchIgPosts);
+registerSourceFetcher("google_drive", fetchGoogleDrive);

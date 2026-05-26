@@ -114,7 +114,15 @@ export async function POST(
       { status: 422 },
     );
 
-  const { sourceType, title, sourceUrl, r2Key, rightsConfirmed } = parsed.data;
+  const { sourceType, title, sourceUrl, r2Key, rawText, rightsConfirmed } =
+    parsed.data;
+
+  if (sourceType === "ig_posts" && !rawText) {
+    return NextResponse.json(
+      { error: "ig_posts requires rawText (paste posts separated by '---')." },
+      { status: 422 },
+    );
+  }
 
   const [doc] = await db
     .insert(documents)
@@ -124,6 +132,7 @@ export async function POST(
       title,
       sourceUrl: sourceUrl ?? null,
       r2Key: r2Key ?? null,
+      rawText: rawText ?? null,
       status: "pending",
       rightsConfirmed,
       rightsConfirmedAt: new Date(),

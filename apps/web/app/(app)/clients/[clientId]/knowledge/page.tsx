@@ -41,6 +41,10 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 };
 
+type DriveStatus =
+  | { connected: false }
+  | { connected: true; accountEmail: string | null };
+
 export default function KnowledgePage() {
   const { clientId } = useParams<{ clientId: string }>();
   const [kbs, setKbs] = useState<KnowledgeBase[]>([]);
@@ -48,6 +52,16 @@ export default function KnowledgePage() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [driveStatus, setDriveStatus] = useState<DriveStatus | null>(null);
+
+  const fetchDriveStatus = useCallback(async () => {
+    const res = await fetch("/api/v1/workspace/google-drive/status");
+    if (res.ok) setDriveStatus((await res.json()) as DriveStatus);
+  }, []);
+
+  useEffect(() => {
+    void fetchDriveStatus();
+  }, [fetchDriveStatus]);
 
   const fetchKbs = useCallback(async () => {
     const res = await fetch(`/api/v1/clients/${clientId}/knowledge-bases`);
@@ -113,6 +127,29 @@ export default function KnowledgePage() {
           <Plus className="h-4 w-4" /> New Knowledge Base
         </Button>
       </div>
+
+      {driveStatus && (
+        <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3 text-sm">
+          <div>
+            <p className="font-medium">Google Drive</p>
+            <p className="text-xs text-muted-foreground">
+              {driveStatus.connected
+                ? `Connected${driveStatus.accountEmail ? ` as ${driveStatus.accountEmail}` : ""}.`
+                : "Not connected — connect to ingest from a Drive folder."}
+            </p>
+          </div>
+          <Button
+            variant={driveStatus.connected ? "outline" : "default"}
+            size="sm"
+            onClick={() => {
+              const returnTo = window.location.pathname;
+              window.location.href = `/api/v1/workspace/google-drive/connect?returnTo=${encodeURIComponent(returnTo)}`;
+            }}
+          >
+            {driveStatus.connected ? "Reconnect" : "Connect Google Drive"}
+          </Button>
+        </div>
+      )}
 
       {kbs.length === 0 && (
         <Alert>

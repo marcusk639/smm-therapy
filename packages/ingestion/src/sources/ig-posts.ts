@@ -1,4 +1,5 @@
 import type { FetchResultRaw } from "./types";
+import type { documents } from "@smm/db/schema";
 
 export function parseIgPosts(rawText: string): FetchResultRaw {
   const posts = rawText
@@ -12,4 +13,15 @@ export function parseIgPosts(rawText: string): FetchResultRaw {
     metadata: { postCount: posts.length },
     posts,
   };
+}
+
+export async function fetchIgPosts(
+  doc: typeof documents.$inferSelect,
+): Promise<FetchResultRaw> {
+  if (!doc.rawText) {
+    throw new Error(
+      "Instagram posts document has no rawText. Re-create the document and paste posts (separated by '---' on its own line).",
+    );
+  }
+  return { ...parseIgPosts(doc.rawText), title: doc.title };
 }

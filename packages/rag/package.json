@@ -13,9 +13,11 @@
     "./query-rewrite": "./src/query-rewrite.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
     "@smm/ai": "workspace:*",
     "@smm/db": "workspace:*",
-    "drizzle-orm": "^0.38.0"
+    "drizzle-orm": "^0.38.0",
+    "voyageai": "^0.2.1"
   },
   "devDependencies": {
     "typescript": "^5.5.0"

@@ -20,9 +20,10 @@
   },
   "dependencies": {
     "@smm/ai": "workspace:*",
+    "@smm/crypto": "workspace:*",
     "@smm/db": "workspace:*",
-    "@smm/rag": "workspace:*",
-    "@smm/inngest": "workspace:*",
+    "@smm/storage": "workspace:*",
+    "drizzle-orm": "^0.38.0",
     "unstructured-client": "^0.16.0",
     "groq-sdk": "^0.9.0",
     "youtube-transcript": "^1.2.1",
