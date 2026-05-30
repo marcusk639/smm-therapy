@@ -14,6 +14,7 @@
     "@smm/crypto": "workspace:^",
     "@smm/db": "workspace:^",
     "@smm/ingestion": "workspace:^",
+    "@smm/notifications": "workspace:^",
     "@smm/rag": "workspace:^",
     "inngest": "^3.0.0",
     "react": "^19.0.0",

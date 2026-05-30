@@ -8,7 +8,7 @@ import {
   brandVoices,
   llmUsageLog,
 } from "@smm/db/schema";
-import { eq } from "drizzle-orm";
+import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { anthropic, extractUsage } from "@smm/ai/client";
 import {
   buildCalendarSystemPrompt,
@@ -57,16 +57,38 @@ export const calendarGenerate = inngest.createFunction(
       db
         .update(calendarJobs)
         .set({ status: "running" })
-        .where(eq(calendarJobs.id, jobId)),
+        .where(
+          and(
+            workspaceFilter(calendarJobs.workspaceId, workspaceId),
+            eq(calendarJobs.id, jobId),
+          ),
+        ),
     );
 
     const [client] = await step.run("fetch-client", () =>
-      db.select().from(clients).where(eq(clients.id, clientId)),
+      db
+        .select()
+        .from(clients)
+        .where(
+          and(
+            workspaceFilter(clients.workspaceId, workspaceId),
+            eq(clients.id, clientId),
+            isNull(clients.deletedAt),
+          ),
+        ),
     );
     if (!client) throw new Error(`Client ${clientId} not found`);
 
     const [brandVoice] = await step.run("fetch-brand-voice", () =>
-      db.select().from(brandVoices).where(eq(brandVoices.clientId, clientId)),
+      db
+        .select()
+        .from(brandVoices)
+        .where(
+          and(
+            workspaceFilter(brandVoices.workspaceId, workspaceId),
+            eq(brandVoices.clientId, clientId),
+          ),
+        ),
     );
     const brandVoiceContext = brandVoice
       ? JSON.stringify(brandVoice.profile)
@@ -78,8 +100,6 @@ export const calendarGenerate = inngest.createFunction(
         credential: client.primaryCredential ?? "Other",
       }),
     );
-
-    let savedCount = 0;
 
     for (let i = 0; i < totalPosts; i++) {
       const topic = topicList[i]!;
@@ -160,18 +180,21 @@ export const calendarGenerate = inngest.createFunction(
           requiresCrisisResources: false,
           scheduledAt,
         });
-
-        savedCount++;
       });
     }
 
     await step.run("mark-complete", () =>
       db
         .update(calendarJobs)
-        .set({ status: "complete", draftCount: savedCount })
-        .where(eq(calendarJobs.id, jobId)),
+        .set({ status: "complete", draftCount: totalPosts })
+        .where(
+          and(
+            workspaceFilter(calendarJobs.workspaceId, workspaceId),
+            eq(calendarJobs.id, jobId),
+          ),
+        ),
     );
 
-    return { ok: true, jobId, draftCount: savedCount };
+    return { ok: true, jobId, draftCount: totalPosts };
   },
 );

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@smm/db/client";
-import { clients } from "@smm/db/schema";
-import { workspaceFilter, and, isNull } from "@smm/db/rls";
+import { clients, workspaces } from "@smm/db/schema";
+import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
+import { count } from "drizzle-orm";
 import { CreateClientSchema } from "@smm/types/client";
 import { requireWorkspace } from "@/lib/workspace";
+import { isWithinClientLimit, clientLimit, type Plan } from "@smm/features";
 
 export async function GET() {
   const auth = await requireWorkspace();
@@ -35,6 +37,36 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: parsed.error.flatten() },
       { status: 422 },
+    );
+  }
+
+  // Plan-gate the client count. starter=1, growth=5, agency=unlimited.
+  const [workspace] = await db
+    .select({ plan: workspaces.plan })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId));
+  const plan = (workspace?.plan ?? "starter") as Plan;
+
+  const [{ value: existingCount }] = await db
+    .select({ value: count() })
+    .from(clients)
+    .where(
+      and(
+        workspaceFilter(clients.workspaceId, workspaceId),
+        isNull(clients.deletedAt),
+      ),
+    );
+
+  if (!isWithinClientLimit(plan, existingCount)) {
+    const limit = clientLimit(plan);
+    return NextResponse.json(
+      {
+        error: `Your ${plan} plan is limited to ${limit} client${limit === 1 ? "" : "s"}. Upgrade to add more.`,
+        plan,
+        currentCount: existingCount,
+        limit,
+      },
+      { status: 403 },
     );
   }
 

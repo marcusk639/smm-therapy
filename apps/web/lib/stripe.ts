@@ -5,7 +5,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-04-30.basil",
+  apiVersion: "2026-04-22.dahlia",
   typescript: true,
 });
 
@@ -20,4 +20,16 @@ export function planFromPriceId(
   if (priceId === PRICE_IDS.growth) return "growth";
   if (priceId === PRICE_IDS.agency) return "agency";
   return "starter";
+}
+
+/**
+ * In the 2026-04-22.dahlia API version `current_period_end` moved from the
+ * Subscription top level onto each subscription item. Read it off the first
+ * item; returns null when no items are present.
+ */
+export function subscriptionCurrentPeriodEnd(
+  sub: Stripe.Subscription,
+): Date | null {
+  const ts = sub.items.data[0]?.current_period_end;
+  return typeof ts === "number" ? new Date(ts * 1000) : null;
 }

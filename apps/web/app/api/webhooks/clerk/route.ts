@@ -54,5 +54,20 @@ export async function POST(req: Request) {
       .where(eq(workspaces.clerkOrgId, id));
   }
 
+  if (evt.type === "organization.deleted") {
+    // The Clerk org is gone. The workspace row + cascading FKs need to be
+    // cleaned up, but auto-hard-deleting an entire workspace's data on a
+    // single webhook event is destructive — easy to trigger by accident
+    // from the Clerk dashboard. Log here so the event is visible in
+    // observability, then handle deletion as a deliberate operation:
+    // surface the orphan workspace in an admin UI for manual confirm,
+    // or add a `deletedAt` column to workspaces and switch to soft-delete
+    // (followup — needs a Drizzle migration).
+    console.warn(
+      "[clerk-webhook] organization.deleted received — workspace cleanup deferred",
+      { clerkOrgId: evt.data.id },
+    );
+  }
+
   return new Response("OK", { status: 200 });
 }

@@ -45,13 +45,19 @@ async function refreshAccessToken(
 }
 
 /**
- * Returns a valid Google Drive access token for the workspace.
- * Refreshes via the stored refresh token if the access token is expired or
- * within REFRESH_LEEWAY_MS of expiry.
+ * Per-workspace in-flight refresh promises. Concurrent callers within the
+ * same Node process await the same refresh instead of each hitting Google's
+ * /token endpoint with the same refresh_token (which can trigger token-family
+ * invalidation on rotating grants).
+ *
+ * NOTE: This dedupes within a single process only. Cross-process races
+ * across multiple Inngest workers are still possible — see the Phase 2
+ * followups note for the full cross-process lock (requires WebSocket driver
+ * or a refresh_lock column).
  */
-export async function getDriveAccessToken(
-  workspaceId: string,
-): Promise<string> {
+const inFlightRefresh = new Map<string, Promise<string>>();
+
+async function loadAndRefresh(workspaceId: string): Promise<string> {
   const [row] = await db
     .select()
     .from(workspaceIntegrations)
@@ -95,4 +101,23 @@ export async function getDriveAccessToken(
     .where(eq(workspaceIntegrations.id, row.id));
 
   return refreshed.access_token;
+}
+
+/**
+ * Returns a valid Google Drive access token for the workspace.
+ * Refreshes via the stored refresh token if the access token is expired or
+ * within REFRESH_LEEWAY_MS of expiry. Concurrent callers in the same process
+ * share a single in-flight refresh.
+ */
+export async function getDriveAccessToken(
+  workspaceId: string,
+): Promise<string> {
+  const existing = inFlightRefresh.get(workspaceId);
+  if (existing) return existing;
+
+  const promise = loadAndRefresh(workspaceId).finally(() => {
+    inFlightRefresh.delete(workspaceId);
+  });
+  inFlightRefresh.set(workspaceId, promise);
+  return promise;
 }

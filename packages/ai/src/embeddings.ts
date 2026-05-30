@@ -1,7 +1,13 @@
 import { VoyageAIClient } from "voyageai";
 
 function getClient() {
-  return new VoyageAIClient({ apiKey: process.env.VOYAGE_API_KEY! });
+  const apiKey = process.env.VOYAGE_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "VOYAGE_API_KEY is not configured. Set it before calling embed() or any RAG path.",
+    );
+  }
+  return new VoyageAIClient({ apiKey });
 }
 
 export async function embed(texts: string[]): Promise<number[][]> {

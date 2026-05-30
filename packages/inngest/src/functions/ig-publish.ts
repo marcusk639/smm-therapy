@@ -2,7 +2,7 @@ import { z } from "zod";
 import { inngest } from "../client";
 import { db } from "@smm/db/client";
 import { drafts, draftStatusHistory, instagramTokens } from "@smm/db/schema";
-import { eq } from "drizzle-orm";
+import { workspaceFilter, and, eq } from "@smm/db/rls";
 import { decrypt } from "@smm/crypto";
 import { buildCaption } from "./ig-publish-utils";
 
@@ -44,7 +44,15 @@ export const igPublish = inngest.createFunction(
     );
 
     const [draft] = await step.run("fetch-draft", () =>
-      db.select().from(drafts).where(eq(drafts.id, draftId)),
+      db
+        .select()
+        .from(drafts)
+        .where(
+          and(
+            workspaceFilter(drafts.workspaceId, workspaceId),
+            eq(drafts.id, draftId),
+          ),
+        ),
     );
     if (!draft) throw new Error(`Draft ${draftId} not found`);
 
@@ -52,14 +60,18 @@ export const igPublish = inngest.createFunction(
       db
         .select()
         .from(instagramTokens)
-        .where(eq(instagramTokens.clientId, clientId)),
+        .where(
+          and(
+            workspaceFilter(instagramTokens.workspaceId, workspaceId),
+            eq(instagramTokens.clientId, clientId),
+          ),
+        ),
     );
     if (!tokenRow) throw new Error("Instagram not connected for this client");
 
-    const accessToken = decrypt(
-      tokenRow.encryptedToken,
-      process.env.INSTAGRAM_TOKEN_KEY!,
-    );
+    const igTokenKey = process.env.INSTAGRAM_TOKEN_KEY;
+    if (!igTokenKey) throw new Error("INSTAGRAM_TOKEN_KEY is not configured");
+    const accessToken = decrypt(tokenRow.encryptedToken, igTokenKey);
     const igUserId = tokenRow.igUserId;
     const caption = buildCaption(draft.hook, draft.caption, draft.hashtags);
 
@@ -80,7 +92,12 @@ export const igPublish = inngest.createFunction(
       db
         .update(drafts)
         .set({ status: "published", igMediaId })
-        .where(eq(drafts.id, draftId)),
+        .where(
+          and(
+            workspaceFilter(drafts.workspaceId, workspaceId),
+            eq(drafts.id, draftId),
+          ),
+        ),
     );
 
     return { ok: true, draftId, igMediaId };

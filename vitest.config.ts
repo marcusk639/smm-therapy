@@ -205,6 +205,46 @@ export default defineConfig({
         find: "@smm/crypto",
         replacement: path.resolve(__dirname, "packages/crypto/src/index.ts"),
       },
+      {
+        find: "@smm/features",
+        replacement: path.resolve(__dirname, "packages/features/src/index.ts"),
+      },
+      {
+        find: "@smm/inngest/client",
+        replacement: path.resolve(__dirname, "packages/inngest/src/client.ts"),
+      },
+      {
+        find: "@smm/inngest/functions",
+        replacement: path.resolve(
+          __dirname,
+          "packages/inngest/src/functions/index.ts",
+        ),
+      },
+      {
+        find: "@smm/inngest",
+        replacement: path.resolve(__dirname, "packages/inngest/src/index.ts"),
+      },
+      {
+        find: "@smm/notifications/email",
+        replacement: path.resolve(
+          __dirname,
+          "packages/notifications/src/email.ts",
+        ),
+      },
+      {
+        find: "@smm/notifications/sms",
+        replacement: path.resolve(
+          __dirname,
+          "packages/notifications/src/sms.ts",
+        ),
+      },
+      {
+        find: "@smm/notifications",
+        replacement: path.resolve(
+          __dirname,
+          "packages/notifications/src/index.ts",
+        ),
+      },
       // Force ingestion's third-party deps to resolve from one location so
       // vi.mock() path matching works across the pnpm workspace boundary.
       {

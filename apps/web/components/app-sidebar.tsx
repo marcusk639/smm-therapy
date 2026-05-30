@@ -3,13 +3,14 @@
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, LayoutDashboard, TrendingUp } from "lucide-react";
+import { Users, LayoutDashboard, TrendingUp, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/trends", label: "Trends", icon: TrendingUp },
+  { href: "/settings/billing", label: "Billing", icon: CreditCard },
 ];
 
 export function AppSidebar() {

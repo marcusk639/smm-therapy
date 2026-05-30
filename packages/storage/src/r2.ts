@@ -5,13 +5,23 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) {
+    throw new Error(
+      `${name} is not configured. R2 storage requires CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME.`,
+    );
+  }
+  return v;
+}
+
 function getClient() {
   return new S3Client({
     region: "auto",
-    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    endpoint: `https://${requireEnv("CLOUDFLARE_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
+      secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
     },
   });
 }
@@ -24,7 +34,7 @@ export async function getPresignedUploadUrl(
   return getSignedUrl(
     getClient(),
     new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: requireEnv("R2_BUCKET_NAME"),
       Key: key,
       ContentType: contentType,
     }),
@@ -39,7 +49,7 @@ export async function getPresignedDownloadUrl(
   return getSignedUrl(
     getClient(),
     new GetObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: requireEnv("R2_BUCKET_NAME"),
       Key: key,
     }),
     { expiresIn },

@@ -50,13 +50,20 @@ export async function fetchGoogleDrive(
   const drive = google.drive({ version: "v3", auth });
   const folderId = extractFolderId(doc.sourceUrl);
 
-  let files: Array<{ id: string; name: string; mimeType: string }>;
+  type DriveFile = { id: string; name: string; mimeType: string };
+  const files: DriveFile[] = [];
   try {
-    const res = await drive.files.list({
-      q: `'${folderId}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType)",
-    });
-    files = (res.data.files ?? []) as typeof files;
+    let pageToken: string | undefined;
+    do {
+      const res = await drive.files.list({
+        q: `'${folderId}' in parents and trashed = false`,
+        fields: "nextPageToken, files(id, name, mimeType)",
+        pageSize: 1000,
+        pageToken,
+      });
+      files.push(...((res.data.files ?? []) as DriveFile[]));
+      pageToken = res.data.nextPageToken ?? undefined;
+    } while (pageToken);
   } catch {
     throw new Error(
       "Access to this folder was removed. Re-connect Google Drive in workspace settings.",
@@ -64,22 +71,42 @@ export async function fetchGoogleDrive(
   }
 
   const textParts: string[] = [];
+  const skipped: string[] = [];
 
   for (const file of files) {
     const exportMime = EXPORTABLE_MIMES[file.mimeType];
     if (!exportMime) continue;
 
-    const exported = await drive.files.export({
-      fileId: file.id,
-      mimeType: exportMime,
-    });
+    try {
+      const exported = await drive.files.export({
+        fileId: file.id,
+        mimeType: exportMime,
+      });
+      const content = exported.data;
+      if (typeof content !== "string") {
+        skipped.push(file.name);
+        continue;
+      }
+      textParts.push(`# ${file.name}\n\n${content}`);
+    } catch {
+      skipped.push(file.name);
+    }
+  }
 
-    textParts.push(`# ${file.name}\n\n${exported.data as string}`);
+  if (textParts.length === 0 && files.length > 0) {
+    throw new Error(
+      `No files in this Google Drive folder could be exported (${files.length} files found, ${skipped.length} skipped). Check folder contents and sharing permissions.`,
+    );
   }
 
   return {
     text: textParts.join("\n\n---\n\n"),
     title: doc.title,
-    metadata: { folderId, fileCount: files.length },
+    metadata: {
+      folderId,
+      fileCount: files.length,
+      exportedCount: textParts.length,
+      skippedFiles: skipped,
+    },
   };
 }

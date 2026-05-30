@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
-import { stripe, planFromPriceId } from "@/lib/stripe";
+import {
+  stripe,
+  planFromPriceId,
+  subscriptionCurrentPeriodEnd,
+} from "@/lib/stripe";
 import { db } from "@smm/db/client";
 import { stripeSubscriptions, workspaces } from "@smm/db/schema";
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(req: Request) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return NextResponse.json(
+      { error: "Webhook not configured" },
+      { status: 500 },
+    );
+  }
+
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
@@ -17,7 +27,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -34,6 +44,8 @@ export async function POST(req: Request) {
       const priceId = sub.items.data[0]?.price.id ?? "";
       const plan = planFromPriceId(priceId);
 
+      const periodEnd = subscriptionCurrentPeriodEnd(sub);
+
       await db
         .insert(stripeSubscriptions)
         .values({
@@ -42,7 +54,7 @@ export async function POST(req: Request) {
           stripeSubscriptionId: sub.id,
           stripePriceId: priceId,
           status: "active",
-          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          currentPeriodEnd: periodEnd,
         })
         .onConflictDoUpdate({
           target: stripeSubscriptions.workspaceId,
@@ -51,7 +63,7 @@ export async function POST(req: Request) {
             stripeSubscriptionId: sub.id,
             stripePriceId: priceId,
             status: "active",
-            currentPeriodEnd: new Date(sub.current_period_end * 1000),
+            currentPeriodEnd: periodEnd,
             updatedAt: new Date(),
           },
         });
@@ -79,7 +91,7 @@ export async function POST(req: Request) {
             | "canceled"
             | "unpaid"
             | "incomplete",
-          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          currentPeriodEnd: subscriptionCurrentPeriodEnd(sub),
           updatedAt: new Date(),
         })
         .where(eq(stripeSubscriptions.stripeSubscriptionId, sub.id));

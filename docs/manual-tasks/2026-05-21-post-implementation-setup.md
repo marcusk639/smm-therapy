@@ -58,18 +58,37 @@ ANTHROPIC_API_KEY=<from console.anthropic.com>
 INNGEST_EVENT_KEY=<from Inngest dashboard>
 INNGEST_SIGNING_KEY=<from Inngest dashboard>
 
-# ── Resend (client portal magic links) ────────────────────
+# ── Resend (client portal magic links + monthly reports) ──
 RESEND_API_KEY=<from resend.com/api-keys>
+# From address used by ALL outbound emails. Must be on a Resend-verified domain.
+EMAIL_FROM=noreply@yourdomain.com
+
+# ── Branding ──────────────────────────────────────────────
+# Optional. Shown in the marketing layout header/footer.
+# Defaults to "Mental Health Practitioner Social Media" if unset.
+NEXT_PUBLIC_APP_NAME=YourProductName
 
 # ── Portal auth (32-byte random hex) ─────────────────────
 # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 PORTAL_SECRET=<64-char hex string>
+
+# ── OAuth state HMAC (32+ char random) ───────────────────
+# Used by Drive AND Instagram OAuth flows to sign state params (CSRF protection).
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+OAUTH_STATE_SECRET=<≥32-char string>
 
 # ── Instagram / Meta OAuth ────────────────────────────────
 IG_APP_ID=<Facebook App ID — see Section 4>
 IG_APP_SECRET=<Facebook App Secret — see Section 4>
 # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 INSTAGRAM_TOKEN_KEY=<64-char hex string>
+
+# ── Google Drive OAuth ────────────────────────────────────
+# Used for the workspace-level Google Drive knowledge-base ingestion source.
+GOOGLE_DRIVE_CLIENT_ID=<from Google Cloud Console>
+GOOGLE_DRIVE_CLIENT_SECRET=<from Google Cloud Console>
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+GOOGLE_DRIVE_TOKEN_KEY=<64-char hex string>
 
 # ── Stripe ────────────────────────────────────────────────
 STRIPE_SECRET_KEY=<from Stripe dashboard — sk_test_... or sk_live_...>
@@ -223,6 +242,7 @@ Add both to `apps/web/.env.local`.
 - Add the **Instagram** product to your app
 - Under **Instagram → API setup with Instagram login**, add your app's OAuth
   redirect URI:
+
   ```
   https://yourdomain.com/api/v1/clients/{clientId}/instagram/callback
   ```
@@ -280,13 +300,13 @@ Add it to `apps/web/.env.local`.
 
 ### 6. Configure Clerk to redirect new sign-ups to `/setup`
 
-**Where:** `apps/web/proxy.ts` — open in your editor
+**Where:** `apps/web/middleware.ts` — open in your editor
 
 The onboarding wizard lives at `/setup`. New workspaces created via Clerk
 should land there instead of `/dashboard`. Update the after-sign-up redirect:
 
 ```typescript
-// apps/web/proxy.ts — update clerkMiddleware callback
+// apps/web/middleware.ts — update clerkMiddleware callback
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect({
@@ -295,6 +315,11 @@ export default clerkMiddleware(async (auth, req) => {
   }
 });
 ```
+
+> **Note:** This file was previously named `proxy.ts` but was renamed to
+> `middleware.ts` in commit 38181c3 so Clerk's auth-enforcement matcher
+> actually runs. Earlier copies of this runbook referred to `proxy.ts` — if
+> you see that filename anywhere, it's stale.
 
 Then in your Clerk dashboard (**Configure → Paths**):
 

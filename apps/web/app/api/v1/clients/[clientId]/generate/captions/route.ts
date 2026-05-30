@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@smm/db/client";
-import { clients, brandVoices, llmUsageLog } from "@smm/db/schema";
+import {
+  clients,
+  brandVoices,
+  generationAudit,
+  llmUsageLog,
+} from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 import { getRulesForClient, runComplianceCritic } from "@smm/compliance/engine";
+import { detectCrisis } from "@smm/compliance/crisis";
 import { getDisclaimerFor, appendDisclaimer } from "@smm/compliance/disclaimer";
 import { anthropic, extractUsage } from "@smm/ai/client";
 import { buildCaptionSystemPrompt } from "@smm/ai/prompts/captions";
@@ -12,6 +18,7 @@ import { retrieve } from "@smm/rag/retrieve";
 import { buildCitations } from "@smm/rag/citations";
 import { GenerateCaptionsSchema } from "@smm/types/generation";
 import { checkRateLimit } from "@/lib/rate-limit";
+import crypto from "node:crypto";
 
 export async function POST(
   req: Request,
@@ -61,7 +68,12 @@ export async function POST(
   const [brandVoice] = await db
     .select()
     .from(brandVoices)
-    .where(eq(brandVoices.clientId, clientId));
+    .where(
+      and(
+        workspaceFilter(brandVoices.workspaceId, workspaceId),
+        eq(brandVoices.clientId, clientId),
+      ),
+    );
 
   const brandVoiceContext = brandVoice
     ? JSON.stringify(brandVoice.profile)
@@ -155,5 +167,52 @@ export async function POST(
     }),
   );
 
-  return NextResponse.json({ captions: captionResults, citations });
+  // Run crisis detection across the topic + hook + all generated captions so
+  // a caption that drifts into crisis territory still surfaces resources.
+  // Matches the spec contract: detection runs on every generation, not only hooks.
+  const crisisInput = [
+    topic,
+    selectedHook,
+    ...captionResults.map((c) => c.caption),
+  ].join(" ");
+  const crisisResult = await detectCrisis(crisisInput);
+
+  // Audit row for the captions generation as a whole. Hash covers all caption
+  // bodies so the same regen produces a stable hash; violations are aggregated
+  // across formats; approved is true only when every format passed.
+  const aggregatedContent = captionResults
+    .map((c) => `[${c.format}]\n${c.caption}`)
+    .join("\n\n---\n\n");
+  const contentHash = crypto
+    .createHash("sha256")
+    .update(aggregatedContent)
+    .digest("hex");
+  const aggregatedViolations = captionResults.flatMap(
+    (c) => c.compliance.violations,
+  );
+  const allApproved = captionResults.every((c) => c.compliance.approved);
+
+  const [auditEntry] = await db
+    .insert(generationAudit)
+    .values({
+      workspaceId,
+      clientId,
+      generationType: "captions",
+      contentHash,
+      rulesVersion: "1.0",
+      violationsFlagged: aggregatedViolations,
+      approved: allApproved,
+    })
+    .returning({ id: generationAudit.id });
+
+  return NextResponse.json({
+    captions: captionResults,
+    auditId: auditEntry!.id,
+    citations,
+    crisis: {
+      triggered: crisisResult.triggered,
+      score: crisisResult.score,
+      resources: crisisResult.resources,
+    },
+  });
 }

@@ -63,7 +63,7 @@ async function fetchRssPosts(feedUrl: string): Promise<ScoredPost[]> {
 }
 
 export const trendSync = inngest.createFunction(
-  { id: "trend-sync", name: "Weekly Trend Sync" },
+  { id: "trend-sync", name: "Weekly Trend Sync", retries: 1 },
   { cron: "0 8 * * 1" }, // Monday 08:00 UTC
   async ({ step, logger }) => {
     const weekOf = buildWeekOf(new Date());

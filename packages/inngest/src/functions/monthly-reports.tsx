@@ -1,8 +1,9 @@
 import { inngest } from "../client";
 import { db } from "@smm/db/client";
 import { clients, drafts, postMetrics, magicLinkTokens } from "@smm/db/schema";
-import { eq, isNull, and, isNotNull, gte, lte, desc } from "drizzle-orm";
-import { Resend } from "resend";
+import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
+import { isNotNull, gte, lte, desc } from "drizzle-orm";
+import { sendEmail } from "@smm/notifications";
 import {
   renderToBuffer,
   Document,
@@ -11,8 +12,6 @@ import {
   View,
   StyleSheet,
 } from "@react-pdf/renderer";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: "Helvetica" },
@@ -128,7 +127,13 @@ export const monthlyReports = inngest.createFunction(
         })
         .from(clients)
         .innerJoin(magicLinkTokens, eq(magicLinkTokens.clientId, clients.id))
-        .where(and(isNull(clients.deletedAt), isNotNull(magicLinkTokens.email)))
+        .where(
+          and(
+            isNull(clients.deletedAt),
+            isNotNull(clients.workspaceId),
+            isNotNull(magicLinkTokens.email),
+          ),
+        )
         .orderBy(clients.id, desc(magicLinkTokens.createdAt)),
     );
 
@@ -149,6 +154,7 @@ export const monthlyReports = inngest.createFunction(
           .from(drafts)
           .where(
             and(
+              workspaceFilter(drafts.workspaceId, client.workspaceId),
               eq(drafts.clientId, client.id),
               isNull(drafts.deletedAt),
               gte(drafts.scheduledAt, start),
@@ -167,6 +173,7 @@ export const monthlyReports = inngest.createFunction(
           .from(postMetrics)
           .where(
             and(
+              workspaceFilter(postMetrics.workspaceId, client.workspaceId),
               eq(postMetrics.clientId, client.id),
               gte(postMetrics.recordedAt, start),
               lte(postMetrics.recordedAt, end),
@@ -246,11 +253,17 @@ export const monthlyReports = inngest.createFunction(
           </Document>,
         );
 
-        await resend.emails.send({
-          from: "noreply@yourdomain.com",
+        const safeName = client.name
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+        await sendEmail({
           to: client.email,
           subject: `Monthly Content Report — ${client.name} — ${month}`,
-          html: `<p>Hi ${client.name},</p><p>Please find your monthly content report attached.</p>`,
+          html: `<p>Hi ${safeName},</p><p>Please find your monthly content report attached.</p>`,
           attachments: [
             {
               filename: `report-${client.slug}-${month}.pdf`,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
-import { buildOAuthState } from "./oauth-state";
+import { buildOAuthState, safeReturnTo } from "./oauth-state";
 
 const SCOPES = ["https://www.googleapis.com/auth/drive.readonly"].join(" ");
 
@@ -10,15 +10,16 @@ export async function GET(req: Request) {
   const { workspaceId } = auth;
 
   const { searchParams } = new URL(req.url);
-  const returnTo = searchParams.get("returnTo") ?? "/";
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
 
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!clientId || !baseUrl) {
+  if (!clientId || !clientSecret || !baseUrl) {
     return NextResponse.json(
       {
         error:
-          "Google Drive OAuth is not configured. GOOGLE_DRIVE_CLIENT_ID and NEXT_PUBLIC_APP_URL must be set.",
+          "Google Drive OAuth is not configured. GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, and NEXT_PUBLIC_APP_URL must be set.",
       },
       { status: 500 },
     );

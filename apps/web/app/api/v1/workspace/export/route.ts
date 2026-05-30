@@ -8,7 +8,7 @@ import {
   knowledgeBases,
   documents,
 } from "@smm/db/schema";
-import { eq } from "drizzle-orm";
+import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
 
 export async function GET() {
   const auth = await requireWorkspace();
@@ -22,16 +22,32 @@ export async function GET() {
     knowledgeBaseRows,
     documentRows,
   ] = await Promise.all([
-    db.select().from(clients).where(eq(clients.workspaceId, workspaceId)),
-    db.select().from(drafts).where(eq(drafts.workspaceId, workspaceId)),
+    db
+      .select()
+      .from(clients)
+      .where(
+        and(
+          workspaceFilter(clients.workspaceId, workspaceId),
+          isNull(clients.deletedAt),
+        ),
+      ),
+    db
+      .select()
+      .from(drafts)
+      .where(
+        and(
+          workspaceFilter(drafts.workspaceId, workspaceId),
+          isNull(drafts.deletedAt),
+        ),
+      ),
     db
       .select()
       .from(brandVoices)
-      .where(eq(brandVoices.workspaceId, workspaceId)),
+      .where(workspaceFilter(brandVoices.workspaceId, workspaceId)),
     db
       .select()
       .from(knowledgeBases)
-      .where(eq(knowledgeBases.workspaceId, workspaceId)),
+      .where(workspaceFilter(knowledgeBases.workspaceId, workspaceId)),
     db
       .select()
       .from(documents)
@@ -39,7 +55,12 @@ export async function GET() {
         knowledgeBases,
         eq(documents.knowledgeBaseId, knowledgeBases.id),
       )
-      .where(eq(knowledgeBases.workspaceId, workspaceId)),
+      .where(
+        and(
+          workspaceFilter(knowledgeBases.workspaceId, workspaceId),
+          isNull(documents.deletedAt),
+        ),
+      ),
   ]);
 
   const payload = JSON.stringify({

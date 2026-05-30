@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
-import { auth as clerkAuth } from "@clerk/nextjs/server";
 import { db } from "@smm/db/client";
 import { workspaceIntegrations } from "@smm/db/schema";
+import { requireWorkspace } from "@/lib/workspace";
 import { encryptDriveToken } from "@/lib/drive-crypto";
-import { parseOAuthState } from "../connect/oauth-state";
+import { parseOAuthState, safeReturnTo } from "../connect/oauth-state";
 
 type TokenResponse = {
   access_token: string;
@@ -50,7 +50,7 @@ async function fetchAccountEmail(accessToken: string): Promise<string | null> {
 }
 
 function failureRedirect(req: Request, returnTo: string, reason: string) {
-  const url = new URL(returnTo, req.url);
+  const url = new URL(safeReturnTo(returnTo), req.url);
   url.searchParams.set("drive_error", reason);
   return NextResponse.redirect(url);
 }
@@ -59,15 +59,21 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
-  const error = searchParams.get("error");
+  const oauthError = searchParams.get("error");
 
   const parsed = state ? parseOAuthState(state) : null;
-  const returnTo = parsed?.returnTo ?? "/";
+  const returnTo = safeReturnTo(parsed?.returnTo);
 
-  if (error) return failureRedirect(req, returnTo, error);
+  if (oauthError) return failureRedirect(req, returnTo, "oauth_denied");
   if (!code || !parsed) return failureRedirect(req, returnTo, "invalid_state");
 
-  const { userId } = await clerkAuth();
+  const auth = await requireWorkspace();
+  if (auth instanceof NextResponse)
+    return failureRedirect(req, returnTo, "unauthorized");
+  if (auth.workspaceId !== parsed.workspaceId)
+    return failureRedirect(req, returnTo, "workspace_mismatch");
+
+  const { workspaceId, userId } = auth;
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -87,7 +93,7 @@ export async function GET(req: Request) {
       .from(workspaceIntegrations)
       .where(
         and(
-          eq(workspaceIntegrations.workspaceId, parsed.workspaceId),
+          eq(workspaceIntegrations.workspaceId, workspaceId),
           eq(workspaceIntegrations.provider, "google_drive"),
         ),
       );
@@ -103,19 +109,19 @@ export async function GET(req: Request) {
           expiresAt,
           scopes,
           accountEmail: email,
-          connectedBy: userId ?? null,
+          connectedBy: userId,
         })
         .where(eq(workspaceIntegrations.id, existing.id));
     } else {
       await db.insert(workspaceIntegrations).values({
-        workspaceId: parsed.workspaceId,
+        workspaceId,
         provider: "google_drive",
         encryptedAccessToken,
         encryptedRefreshToken,
         expiresAt,
         scopes,
         accountEmail: email,
-        connectedBy: userId ?? null,
+        connectedBy: userId,
       });
     }
 
@@ -123,7 +129,7 @@ export async function GET(req: Request) {
     url.searchParams.set("drive_connected", "1");
     return NextResponse.redirect(url);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown";
-    return failureRedirect(req, returnTo, msg);
+    console.error("[drive-callback] token exchange or DB write failed:", err);
+    return failureRedirect(req, returnTo, "internal_error");
   }
 }

@@ -69,7 +69,12 @@ function mergeSmall(segments: string[], sep: string): string[] {
   if (current) {
     if (merged.length > 0 && countTokens(current) < MIN_TOKENS) {
       const last = merged[merged.length - 1]!;
-      merged.splice(merged.length - 1, 1, `${last}\n\n${current}`);
+      const combined = `${last}\n\n${current}`;
+      if (countTokens(combined) <= MAX_TOKENS) {
+        merged.splice(merged.length - 1, 1, combined);
+      } else {
+        merged.push(current);
+      }
     } else {
       merged.push(current);
     }

@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 
-const STRIPE_API_VERSION = "2024-06-20" as const;
+const STRIPE_API_VERSION = "2026-04-22.dahlia" as const;
 
 export interface StripeSetupResult {
   growthPriceId: string;

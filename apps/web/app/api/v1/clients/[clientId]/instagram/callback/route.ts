@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@smm/db/client";
-import { instagramTokens } from "@smm/db/schema";
-import { eq } from "drizzle-orm";
+import { instagramTokens, clients } from "@smm/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import { requireWorkspace } from "@/lib/workspace";
 import { encryptToken } from "@/lib/ig-crypto";
 import { parseOAuthState } from "../connect/oauth-state";
 
@@ -59,6 +60,12 @@ async function getIgUserId(
   return { igUserId: account.id, igUsername: account.username };
 }
 
+function failureRedirect(req: Request, clientId: string, reason: string) {
+  return NextResponse.redirect(
+    new URL(`/clients/${clientId}/instagram?error=${reason}`, req.url),
+  );
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ clientId: string }> },
@@ -69,16 +76,37 @@ export async function GET(
   const { clientId } = await params;
 
   if (!code || !state) {
-    return NextResponse.redirect(
-      new URL(`/clients/${clientId}/instagram?error=denied`, req.url),
-    );
+    return failureRedirect(req, clientId, "denied");
   }
 
   const parsed = parseOAuthState(state);
   if (!parsed || parsed.clientId !== clientId) {
-    return NextResponse.redirect(
-      new URL(`/clients/${clientId}/instagram?error=state_mismatch`, req.url),
+    return failureRedirect(req, clientId, "state_mismatch");
+  }
+
+  const auth = await requireWorkspace();
+  if (auth instanceof NextResponse) {
+    return failureRedirect(req, clientId, "unauthorized");
+  }
+  if (auth.workspaceId !== parsed.workspaceId) {
+    return failureRedirect(req, clientId, "workspace_mismatch");
+  }
+
+  const { workspaceId } = auth;
+
+  // Defense in depth: verify the clientId actually belongs to this workspace
+  const [client] = await db
+    .select({ id: clients.id })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.workspaceId, workspaceId),
+        isNull(clients.deletedAt),
+      ),
     );
+  if (!client) {
+    return failureRedirect(req, clientId, "client_not_found");
   }
 
   try {
@@ -94,8 +122,8 @@ export async function GET(
     await db
       .insert(instagramTokens)
       .values({
-        clientId: parsed.clientId,
-        workspaceId: parsed.workspaceId,
+        clientId,
+        workspaceId,
         igUserId,
         igUsername,
         encryptedToken,
@@ -123,12 +151,7 @@ export async function GET(
       new URL(`/clients/${clientId}/instagram?connected=1`, req.url),
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown";
-    return NextResponse.redirect(
-      new URL(
-        `/clients/${clientId}/instagram?error=${encodeURIComponent(msg)}`,
-        req.url,
-      ),
-    );
+    console.error("[ig-callback] token exchange or DB write failed:", err);
+    return failureRedirect(req, clientId, "internal_error");
   }
 }

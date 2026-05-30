@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { checkA11y } from "@axe-core/playwright";
+import AxeBuilder from "@axe-core/playwright";
 
 /**
  * E2E: Client approval portal — WCAG 2.1 AA accessibility
@@ -25,8 +25,11 @@ test.describe("Client approval portal accessibility", () => {
     const hasForm = (await form.count()) > 0;
     expect(hasHeading || hasForm).toBe(true);
 
-    // Throws on any WCAG 2.1 AA critical violation.
-    await checkA11y(page);
+    // Fail on any WCAG 2.1 AA violation.
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
   });
 
   test("portal magic link form has accessible labels", async ({ page }) => {
@@ -36,9 +39,10 @@ test.describe("Client approval portal accessibility", () => {
     const emailInput = page.getByRole("textbox", { name: /email/i });
     await expect(emailInput).toBeVisible();
 
-    await checkA11y(page, undefined, {
-      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] },
-    });
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
   });
 
   test("portal page keyboard navigation works", async ({ page }) => {
@@ -69,6 +73,9 @@ test.describe("Client approval portal accessibility", () => {
 
     await page.goto(`/portal/${clientSlug}`);
 
-    await checkA11y(page);
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
   });
 });

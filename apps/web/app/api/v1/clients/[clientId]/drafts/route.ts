@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@smm/db/client";
-import { clients, drafts } from "@smm/db/schema";
+import { clients, drafts, llmUsageLog } from "@smm/db/schema";
 import { workspaceFilter, and, isNull, eq } from "@smm/db/rls";
+import { getRulesForClient, runComplianceCritic } from "@smm/compliance/engine";
 import { SaveDraftSchema } from "@smm/types/generation";
 
 export async function GET(
@@ -53,7 +54,7 @@ export async function POST(
   const { clientId } = await params;
 
   const [client] = await db
-    .select({ id: clients.id })
+    .select()
     .from(clients)
     .where(
       and(
@@ -84,6 +85,28 @@ export async function POST(
     requiresCrisisResources,
   } = parsed.data;
 
+  // Run the compliance critic on the actual saved content. The earlier
+  // generation-time critic only saw the as-generated text; if the user
+  // edited it before saving, we need to re-check.
+  const rules = await getRulesForClient({
+    state: client.practiceState ?? "unknown",
+    credential: client.primaryCredential ?? "Other",
+  });
+  const criticResult = await runComplianceCritic(
+    `${hook}\n\n${caption}`,
+    rules,
+  );
+
+  await db.insert(llmUsageLog).values({
+    workspaceId,
+    model: "claude-haiku-4-5-20251001",
+    promptTokens: criticResult.usage.inputTokens,
+    completionTokens: criticResult.usage.outputTokens,
+    cacheReadTokens: criticResult.usage.cacheReadTokens,
+    cacheWriteTokens: criticResult.usage.cacheWriteTokens,
+    callType: "compliance_critic",
+  });
+
   const [draft] = await db
     .insert(drafts)
     .values({
@@ -95,9 +118,18 @@ export async function POST(
       format: format ?? null,
       generationAuditId: generationAuditId ?? null,
       requiresCrisisResources,
-      complianceApproved: true,
+      complianceApproved: criticResult.approved,
     })
     .returning();
 
-  return NextResponse.json({ draft }, { status: 201 });
+  return NextResponse.json(
+    {
+      draft,
+      compliance: {
+        violations: criticResult.violations,
+        approved: criticResult.approved,
+      },
+    },
+    { status: 201 },
+  );
 }
