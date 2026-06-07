@@ -4,7 +4,7 @@ Multi-tenant SaaS automating Instagram content creation and client-handoff for S
 
 ## Stack
 
-Next.js 15 · Clerk · Neon Postgres + pgvector · Drizzle ORM · Inngest · Vercel · Cloudflare R2 · Anthropic (Claude Haiku 4.5 + Opus) · Voyage AI (`voyage-3` embeddings + `voyage-rerank-2`) · Stripe · Resend · Unstructured (PDF parsing, Railway-hosted) · Groq (Whisper transcription).
+Next.js 15 · Clerk · Neon Postgres + pgvector · Drizzle ORM · Inngest · Vercel · Cloudflare R2 · Anthropic (Claude Haiku 4.5 + Opus) · Voyage AI (`voyage-3` embeddings + `voyage-rerank-2`) · Stripe · Resend (email) · Twilio (SMS) · Unstructured (PDF parsing, Railway-hosted) · Groq (Whisper transcription).
 
 ## Repository layout
 
@@ -19,6 +19,7 @@ pnpm + Turborepo monorepo. Workspaces: `apps/*`, `packages/*`, `tools/*`.
 - `packages/features` — Feature flag helpers.
 - `packages/ingestion` — Source fetchers + chunkers + Inngest-driven pipeline. See `packages/ingestion/CLAUDE.md`.
 - `packages/inngest` — Inngest client + function definitions.
+- `packages/notifications` — Transactional email (Resend) + SMS (Twilio) senders.
 - `packages/rag` — `retrieve()` pipeline (embed → hybrid search → rerank → citations).
 - `packages/storage` — Cloudflare R2 (S3-compatible) presigner.
 - `packages/types` — Zod schemas shared across the app.
